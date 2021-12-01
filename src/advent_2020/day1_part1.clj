@@ -1,23 +1,26 @@
 (ns advent-2020.day1-part1)
 
-(defn do-something []
-  (get-depths))
-
 (def depths (get-depths))
 
-(defn increased? [current previous]
+(defn- increased? [current previous]
   (or (nil? previous) (> current previous)))
+
+(defn map-to-increments
+  ([measurements]
+   (map-to-increments (first measurements) (rest measurements) ["N/A"]))
+
+  ([previous items results]
+   (let [current (first items)
+         others (rest items)
+         value (if (increased? current previous) "increased" "decreased")
+         new-results (conj results value)]
+     (if (empty? others)
+       new-results
+       (map-to-increments current others new-results)))))
 
 (defn part1 []
   (->>
-    (map-indexed (fn [idx value]
-                   (let [previous-index (- idx 1)
-                         previous-value (get depths previous-index)]
-                     previous-value
-                     (if (increased? value previous-value) "increased" "decreased")))
-                 depths)
-    rest
-    (cons "N/A")
+    (map-to-increments depths)
     (filter #(= "increased" %))
     (count)))
 
