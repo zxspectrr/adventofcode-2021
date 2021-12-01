@@ -1,43 +1,26 @@
-(ns advent-2020.day1-part1)
+(ns advent-2020.day1-part2)
 
-(defn- add-number [numbers all-numbers]
+(defn- add-number [number]
   (->>
-    (filter #(not= number %) numbers)))
-    ;(map #(+ number %))))
+    (filter #(not= number %) numbers)
+    (map #(+ number %))))
 
 (defn- is-2020-number [number]
   (->>
     (add-number number)
-    (add-number)))
-    ;(filter #(= 2020 %))
-    ;empty?
-    ;not))
+    (filter #(= 2020 %))
+    empty?
+    not))
 
 (defn- find-2020-numbers []
   (filter #(is-2020-number %) numbers))
 
-(defn- other-numbers [number numlist]
-  (filter #(not= number %) numlist))
-
-(defn- filtered-numbers [input]
-  (map
-    #(add-number % input) input))
-
 (comment
   (->>
-    (filtered-numbers small-nums)
-    (filtered-numbers)))
+    (find-2020-numbers)
+    (reduce *)))
 
-
-
-  ;(->>
-  ;  (find-2020-numbers)
-  ;  (reduce *))
-
-(def small-nums [1822 1917 1642 1617 2112 31313])
-
-
-(def nums
+(def numbers
   [1822
    1917
    1642
