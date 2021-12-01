@@ -8,18 +8,19 @@
 (defn part1 []
   (->>
     (partition 2 1 depths)
-    (map #(let [[first second] %]
-            (if (increased? second first) "increased" "decreased")))
+    (map #(let [[current next] %]
+            (if (increased? next current) "increased" "decreased")))
     (filter #(= "increased" %))
     (count)))
 
 (comment
   (->>
     (partition 2 1 depths)
-    (map #(let [[first second] %]
-            (if (increased? second first) "increased" "decreased")))
-    (filter #(= "increased" %))
-    (count))
+    (take 5))
+    ;(map #(let [[first second] %]
+    ;        (if (increased? second first) "increased" "decreased")))
+    ;(filter #(= "increased" %))
+    ;(count))
   (get-depths))
 
 (defn- get-depths []
