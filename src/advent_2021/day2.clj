@@ -13,7 +13,7 @@
        (reduce +)))
 
 (defn part1 []
-  (let [coords (get-coords "resources/coords.txt")
+  (let [coords (get-coords "resources/steps.txt")
         horizontal (get-total-for-direction "forward" coords)
         up (* -1 (get-total-for-direction "up" coords))
         down (get-total-for-direction "down" coords)
