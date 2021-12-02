@@ -1,4 +1,4 @@
-(ns advent-2020.day1-part2)
+(ns advent-2021.day1-part2)
 
 (defn- get-depths []
   (->>

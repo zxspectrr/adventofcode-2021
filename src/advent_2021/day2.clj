@@ -1,4 +1,4 @@
-(ns advent-2020.day2
+(ns advent-2021.day2
   (:require [clojure.string :as s]))
 
 (defn- get-coords [path]
@@ -47,8 +47,6 @@
                   [0 0]))
         [x y] final-pos]
     (* x y)))
-
-
 
 
 (comment)
