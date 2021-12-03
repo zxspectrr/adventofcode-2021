@@ -1,4 +1,4 @@
-(defproject advent-2020 "0.1.0-SNAPSHOT"
+(defproject advent-2021 "0.1.0-SNAPSHOT"
   :description "FIXME: write description"
   :url "http://example.com/FIXME"
   :license {:name "EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0"
@@ -8,4 +8,4 @@
                  [com.taoensso/timbre "5.1.0"]
                  [cheshire "5.10.0"]]
 
-  :repl-options {:init-ns advent-2020.core})
+  :repl-options {:init-ns advent-2021.core})

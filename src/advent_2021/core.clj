@@ -1,4 +1,4 @@
-(ns advent-2020.core)
+(ns advent-2021.core)
 
 (defn foo
   "I don't do a whole lot."
