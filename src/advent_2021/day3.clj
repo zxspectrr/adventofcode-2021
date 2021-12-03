@@ -7,7 +7,7 @@
     (read-string)))
 
 (defn string-to-digits [n]
-  (map #(comp read-string str) n))
+  (->> n str (map (comp read-string str))))
 
 (defn calculate-rate [comparator input]
   (->>
@@ -27,9 +27,31 @@
         epsilon (calculate-rate min-key report)]
     (* (bits-to-decimal gamma) (bits-to-decimal epsilon))))
 
-(comment
-  (part1))
+(defn find-reading [index readings comparator]
+  (let [search-bit
+        (as->
+          readings v
+          (apply map vector v)
+          (map frequencies v)
+          (nth v index)
+          (key (apply comparator val v)))
+        filtered (filter #(= (nth % index) search-bit) readings)
+        remaining (count filtered)]
 
+    (if (= 1 remaining)
+      (str/join (first filtered))
+      (find-reading (inc index) filtered comparator))))
+
+(defn part2 []
+  (let [pivoted
+        (->>
+          report
+          (map string-to-digits))
+        o2-bits (find-reading 0 pivoted max-key)
+        co2-bits (find-reading 0 pivoted min-key)]
+    (* (bits-to-decimal o2-bits) (bits-to-decimal co2-bits))))
+
+(comment)
 
 (def small-report
   ["00100"
