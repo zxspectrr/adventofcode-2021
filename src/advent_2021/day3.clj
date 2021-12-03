@@ -27,28 +27,23 @@
         epsilon (calculate-rate min-key report)]
     (* (bits-to-decimal gamma) (bits-to-decimal epsilon))))
 
-(defn find-reading [index readings comparator]
-  (let [search-bit
-        (as->
-          readings v
-          (apply map vector v)
-          (map frequencies v)
-          (nth v index)
-          (key (apply comparator val v)))
-        filtered (filter #(= (nth % index) search-bit) readings)
-        remaining (count filtered)]
-
-    (if (= 1 remaining)
-      (str/join (first filtered))
-      (find-reading (inc index) filtered comparator))))
+(defn find-reading [readings comparator]
+  (loop [index 0
+         input readings]
+    (if (= 1 (count input))
+      (str/join (first input))
+      (let [{zeros 0 ones 1} (group-by #(nth % index) input)]
+        (if (comparator (count zeros) (count ones))
+          (recur (inc index) zeros)
+          (recur (inc index) ones))))))
 
 (defn part2 []
   (let [pivoted
         (->>
           report
           (map string-to-digits))
-        o2-bits (find-reading 0 pivoted max-key)
-        co2-bits (find-reading 0 pivoted min-key)]
+        o2-bits (find-reading pivoted >)
+        co2-bits (find-reading pivoted <=)]
     (* (bits-to-decimal o2-bits) (bits-to-decimal co2-bits))))
 
 (comment)
