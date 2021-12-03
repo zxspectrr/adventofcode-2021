@@ -1,13 +1,14 @@
 (ns advent-2021.day3
   (:require [clojure.string :as str]))
 
+(defn string-to-digits [n]
+  (->> n str (map (comp read-string str))))
+
 (defn- get-report []
   (->>
     (slurp "resources/report.edn")
-    (read-string)))
-
-(defn string-to-digits [n]
-  (->> n str (map (comp read-string str))))
+    (read-string)
+    (map string-to-digits)))
 
 (defn pivot [dataset]
   (apply map vector dataset))
@@ -15,7 +16,6 @@
 (defn calculate-rate [comparator input]
   (->>
     input
-    (map string-to-digits)
     (pivot)
     (map frequencies)
     (map #(key (apply comparator val %)))
@@ -41,7 +41,7 @@
           (recur (inc index) ones))))))
 
 (defn part2 []
-  (let [input (map string-to-digits report)
+  (let [input (get-report)
         o2-bits (find-reading input >)
         co2-bits (find-reading input <=)]
     (* (bits-to-decimal o2-bits) (bits-to-decimal co2-bits))))
