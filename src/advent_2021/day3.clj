@@ -9,11 +9,14 @@
 (defn string-to-digits [n]
   (->> n str (map (comp read-string str))))
 
+(defn pivot [dataset]
+  (apply map vector dataset))
+
 (defn calculate-rate [comparator input]
   (->>
     input
     (map string-to-digits)
-    (apply map vector)
+    (pivot)
     (map frequencies)
     (map #(key (apply comparator val %)))
     (str/join)))
@@ -38,26 +41,7 @@
           (recur (inc index) ones))))))
 
 (defn part2 []
-  (let [pivoted
-        (->>
-          report
-          (map string-to-digits))
-        o2-bits (find-reading pivoted >)
-        co2-bits (find-reading pivoted <=)]
+  (let [input (map string-to-digits report)
+        o2-bits (find-reading input >)
+        co2-bits (find-reading input <=)]
     (* (bits-to-decimal o2-bits) (bits-to-decimal co2-bits))))
-
-(comment)
-
-(def small-report
-  ["00100"
-   "11110"
-   "10110"
-   "10111"
-   "10101"
-   "01111"
-   "00111"
-   "11100"
-   "10000"
-   "11001"
-   "00010"
-   "01010"])
