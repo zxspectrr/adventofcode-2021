@@ -9,11 +9,6 @@
 (defn digits [n]
   (->> n str (map (comp read-string str))))
 
-(defn bits-to-number [bits]
-  (->
-    (str/join bits)
-    (Integer/parseInt 2)))
-
 (defn pivot [digits]
   (map-indexed (fn [index _]
                  (map #(nth % index) digits))
@@ -22,26 +17,26 @@
 (defn most-frequent-bit [bits]
   (key (apply max-key val bits)))
 
-(defn frequent-bits [input]
+(defn gamma-bits [input]
   (->>
     (map digits input)
     (pivot)
     (map frequencies)
     (map most-frequent-bit)))
 
-(defn gamma [input]
+(defn epsilon-bits [input]
   (->>
-    (frequent-bits input)
-    (bits-to-number)))
+    (gamma-bits input)
+    (map #(if (zero? %) 1 0))))
 
-(defn epsilon [input]
-  (->>
-    (frequent-bits input)
-    (map #(if (zero? %) 1 0))
-    (bits-to-number)))
+(defn bits-to-number [bits]
+  (->
+    (str/join bits)
+    (Integer/parseInt 2)))
 
 (defn power [input]
-  (* (gamma input) (epsilon input)))
+  (* (bits-to-number (gamma-bits input))
+     (bits-to-number (epsilon-bits input))))
 
 (defn part1 []
   (power (get-report)))
