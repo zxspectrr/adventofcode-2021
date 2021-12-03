@@ -7,7 +7,7 @@
     (read-string)))
 
 (defn string-to-digits [n]
-  (->> n str (map (comp read-string str))))
+  (map #(comp read-string str) n))
 
 (defn calculate-rate [comparator input]
   (->>
