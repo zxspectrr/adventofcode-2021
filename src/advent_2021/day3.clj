@@ -6,40 +6,30 @@
     (slurp "resources/report.edn")
     (read-string)))
 
-(defn digits [n]
+(defn string-to-digits [n]
   (->> n str (map (comp read-string str))))
 
-(defn pivot [digits]
-  (map-indexed (fn [index _]
-                 (map #(nth % index) digits))
-               (first digits)))
-
-(defn most-frequent-bit [bits]
-  (key (apply max-key val bits)))
-
-(defn gamma-bits [input]
+(defn calculate-rate [comparator input]
   (->>
-    (map digits input)
-    (pivot)
+    input
+    (map string-to-digits)
+    (apply map vector)
     (map frequencies)
-    (map most-frequent-bit)))
+    (map #(key (apply comparator val %)))
+    (str/join)))
 
-(defn epsilon-bits [input]
-  (->>
-    (gamma-bits input)
-    (map #(if (zero? %) 1 0))))
-
-(defn bits-to-number [bits]
-  (->
-    (str/join bits)
-    (Integer/parseInt 2)))
-
-(defn power [input]
-  (* (bits-to-number (gamma-bits input))
-     (bits-to-number (epsilon-bits input))))
+(defn bits-to-decimal [bits]
+  (Integer/parseInt bits 2))
 
 (defn part1 []
-  (power (get-report)))
+  (let [report (get-report)
+        gamma (calculate-rate max-key report)
+        epsilon (calculate-rate min-key report)]
+    (* (bits-to-decimal gamma) (bits-to-decimal epsilon))))
+
+(comment
+  (part1))
+
 
 (def small-report
   ["00100"
@@ -54,10 +44,3 @@
    "11001"
    "00010"
    "01010"])
-
-(comment
-  (part1))
-
-
-
-
