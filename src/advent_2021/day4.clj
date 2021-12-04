@@ -4,8 +4,7 @@
 (defn expand-board [lines]
   (map (fn [line]
          (->> (s/split (s/trim line) #"\s+")
-              (map (fn [string-num]
-                     [(Integer/parseInt string-num) false]))))
+              (map #(vector (Integer/parseInt %) false))))
        lines))
 
 (defn load-scores-and-boards []
