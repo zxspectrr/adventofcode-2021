@@ -8,13 +8,13 @@
        lines))
 
 (defn load-scores-and-boards []
-  (let [lines (s/split-lines (slurp "resources/small-bingo.txt"))
+  (let [lines (s/split-lines (slurp "resources/bingo.txt"))
         scores (->> (s/split (first lines) #",")
                     (map #(Integer/parseInt %)))
         boards (->> (filter #(not= "" %) (rest lines))
                     (partition 5)
                     (map expand-board))]
-    {:scores scores :boards boards}))
+    [scores boards]))
 
 (defn mark-board [board score]
   (map (fn [line]
@@ -27,66 +27,41 @@
 
 (defn check-row [board]
   (->> (map #(group-by (fn [item] (second item)) %) board)
-       (filter (fn [{falses false}] (nil? falses)))
+       (filter (fn [{false-items false}] (nil? false-items)))
        (empty?)
        (not)))
 
 (defn winning-board? [board]
   (or (check-row board) (check-row (pivot board))))
 
-(defn run-game [boards scores]
+(defn find-winning-boards [boards]
+  (filter winning-board? boards))
+
+(defn run-games [boards scores]
   (loop [bs boards
          sc scores]
-    (let [new-boards (map #(mark-board % (first sc)) bs)]
-      (if (= 1 (count sc))
-        new-boards
+    (let [new-boards (map #(mark-board % (first sc)) bs)
+          winning-boards (find-winning-boards new-boards)]
+      (if (or (= 1 (count sc)) (not (empty? winning-boards)))
+        [winning-boards (first sc)]
         (recur new-boards (rest sc))))))
 
+(defn part1 []
+  (let [[scores boards] (load-scores-and-boards)
+        result (run-games boards scores)
+        [winning-boards score] result
+        sum-of-remaining
+        (->> (first winning-boards)
+             (mapcat #(do %))
+             (filter #(false? (second %)))
+             (map first)
+             (reduce +))]
+    (* sum-of-remaining score)))
+
 (comment
-  (def boards (:boards (load-scores-and-boards)))
-  (def scores (:scores (load-scores-and-boards)))
-
-  boards
-
-  (def board (first boards)))
-
-  [board]
-
-  (def horizontal-board (first (run-game [board] [22 13 17 11 0])))
-
-  (def vertical-board (first (run-game [board] [22 8 21 6 1])))
-
-  (winning-board? vertical-board)
-
-  vertical-board
-  horizontal-board
-  (check-row horizontal-board)
-
-  (pivot board)
-  board
-
-  (->> (map #(group-by (fn [item] (second item)) %) horizontal-board)
-       (filter (fn [{falses false}] (nil? falses)))
-       (empty?)
-       (not))
+  (part1))
 
 
-  (defn check-board [board]
-   )
-
-  board
-
-  (defn horizontal-board
-    ())
-
-
-  (map (fn [line]
-         (map (fn [[score _]]
-                [score (= score 7)])
-              line))
-       board)
-
-  "test"
 
 
 
