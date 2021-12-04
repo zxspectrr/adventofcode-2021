@@ -37,13 +37,17 @@
 (defn find-winning-boards [boards]
   (filter winning-board? boards))
 
+(defn update-boards [boards score]
+  (map #(mark-board % score) boards))
+
 (defn run-games [boards scores]
   (loop [bs boards
          sc scores]
-    (let [new-boards (map #(mark-board % (first sc)) bs)
+    (let [new-score (first sc)
+          new-boards (update-boards bs new-score)
           winning-boards (find-winning-boards new-boards)]
       (if (or (= 1 (count sc)) (not (empty? winning-boards)))
-        [winning-boards (first sc)]
+        [winning-boards new-score]
         (recur new-boards (rest sc))))))
 
 (defn part1 []
