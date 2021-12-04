@@ -1,34 +1,30 @@
 (ns advent-2021.day3
   (:require [clojure.string :as str]))
 
-(defn string-to-digits [n]
-  (->> n str (map (comp read-string str))))
+(defn string-to-digits [n] (map (comp read-string str) n))
+(defn pivot [dataset] (apply map vector dataset))
 
-(defn- get-report []
-  (->>
-    (slurp "resources/report.edn")
-    (read-string)
-    (map string-to-digits)))
-
-(defn pivot [dataset]
-  (apply map vector dataset))
+(defn get-report []
+  (->> (slurp "resources/report.edn")
+       (read-string)
+       (map string-to-digits)))
 
 (defn calculate-rate [comparator input]
-  (->>
-    input
-    (pivot)
-    (map frequencies)
-    (map #(key (apply comparator val %)))
-    (str/join)))
+  (->> input
+       (pivot)
+       (map frequencies)
+       (map #(key (apply comparator val %)))
+       (str/join)))
 
-(defn bits-to-decimal [bits]
-  (Integer/parseInt bits 2))
+(defn multiply-bits [bits]
+  (->> (map #(Integer/parseInt % 2) bits)
+       (apply *)))
 
 (defn part1 []
   (let [report (get-report)
         gamma (calculate-rate max-key report)
         epsilon (calculate-rate min-key report)]
-    (* (bits-to-decimal gamma) (bits-to-decimal epsilon))))
+    (multiply-bits [gamma epsilon])))
 
 (defn find-reading [readings comparator]
   (loop [index 0
@@ -44,4 +40,4 @@
   (let [input (get-report)
         o2-bits (find-reading input >)
         co2-bits (find-reading input <=)]
-    (* (bits-to-decimal o2-bits) (bits-to-decimal co2-bits))))
+    (multiply-bits [o2-bits co2-bits])))
