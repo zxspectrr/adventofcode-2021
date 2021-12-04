@@ -50,17 +50,19 @@
         [winning-boards new-score]
         (recur new-boards (rest sc))))))
 
+(defn score-for-board [board winning-score]
+  (->> board
+       (mapcat #(do %))
+       (filter #(false? (second %)))
+       (map first)
+       (reduce +)
+       (* winning-score)))
+
 (defn part1 []
   (let [[scores boards] (load-scores-and-boards)
         result (run-games boards scores)
-        [winning-boards score] result
-        sum-of-remaining
-        (->> (first winning-boards)
-             (mapcat #(do %))
-             (filter #(false? (second %)))
-             (map first)
-             (reduce +))]
-    (* sum-of-remaining score)))
+        [winning-boards winning-score] result]
+    (score-for-board (first winning-boards) winning-score)))
 
 (comment
   (part1))
