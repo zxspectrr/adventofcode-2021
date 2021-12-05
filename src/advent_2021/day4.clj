@@ -59,8 +59,7 @@
   (loop [boards boards
          scores scores
          winners []]
-    (if (or (empty? scores)
-            (= (count winners) (count boards)))
+    (if (or (empty? scores) (empty? boards))
       winners
       (let [score (first scores)
             new-boards (update-boards boards score)
