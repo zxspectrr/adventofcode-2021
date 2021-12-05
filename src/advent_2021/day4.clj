@@ -10,7 +10,7 @@
    :winner false})
 
 (defn load-scores-and-boards []
-  (let [lines  (->> (slurp "resources/small-bingo.txt")
+  (let [lines  (->> (slurp "resources/bingo.txt")
                     (s/split-lines))
         scores (->> (s/split (first lines) #",")
                     (map #(Integer/parseInt %)))
@@ -68,16 +68,16 @@
                scores)
        :winners))
 
-(defn part1 []
+(defn run-games []
   (->> (load-scores-and-boards)
-       ((fn [[scores boards]] (process-scores boards scores)))
+       ((fn [[scores boards]] (process-scores boards scores)))))
+
+(defn part1 []
+  (->> (run-games)
        (first)
        (:score)))
 
 (defn part2 []
-  (->> (load-scores-and-boards)
-       ((fn [[scores boards]] (process-scores boards scores)))
+  (->> (run-games)
        (last)
        (:score)))
-
-
