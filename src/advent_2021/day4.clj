@@ -10,7 +10,7 @@
    :winner false})
 
 (defn load-scores-and-boards []
-  (let [lines  (->> (slurp "resources/bingo.txt")
+  (let [lines  (->> (slurp "resources/small-bingo.txt")
                     (s/split-lines))
         scores (->> (s/split (first lines) #",")
                     (map #(Integer/parseInt %)))
@@ -45,28 +45,29 @@
        (* score)))
 
 (defn update-board [board score]
-  (->> (mark-board (:board board) score)
-       ((fn [new-board]
-          (let [winner? (winning-board? new-board)]
-            {:board new-board
-             :winner winner?
-             :score (if winner? (score-for-board new-board score) nil)})))))
+  (if (:winner board)
+    board
+    (->>
+      (mark-board (:board board) score)
+      ((fn [new-board]
+         (let [winner? (winning-board? new-board)]
+           {:board new-board
+            :winner winner?
+            :score (if winner? (score-for-board new-board score) nil)}))))))
 
 (defn update-boards [boards score]
   (map #(update-board % score) boards))
 
-(defn process-score [game-state score]
-  (let [{players :playing winners :winners} game-state
-        new-boards (update-boards players score)
-        {finished true playing false} (group-by #(true? (:winner %)) new-boards)]
-    {:winners (concat winners finished)
-     :playing playing}))
-
 (defn process-scores [boards scores]
-  (->> (reduce process-score
-               {:winners [] :playing boards}
-               scores)
-       :winners))
+  (loop [boards boards
+         scores scores
+         winners []]
+    (if (empty? scores)
+      winners
+      (let [score (first scores)
+            new-boards (update-boards boards score)
+            {finished true playing false} (group-by #(true? (:winner %)) new-boards)]
+        (recur playing (rest scores) (concat winners finished))))))
 
 (defn run-games []
   (->> (load-scores-and-boards)
