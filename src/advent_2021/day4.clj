@@ -25,13 +25,13 @@
                  [board-value (or selected (= board-value score))]) line))
        board))
 
-(defn pivot [dataset] (apply map vector dataset))
-
 (defn check-row [board]
   (->> (map #(group-by (fn [item] (second item)) %) board)
        (filter (fn [{false-items false}] (nil? false-items)))
        (empty?)
        (not)))
+
+(defn pivot [dataset] (apply map vector dataset))
 
 (defn winning-board? [board]
   (or (check-row board) (check-row (pivot board))))
@@ -79,9 +79,5 @@
        ((fn [[scores boards]] (process-scores boards scores)))
        (last)
        (:score)))
-
-
-
-
 
 
