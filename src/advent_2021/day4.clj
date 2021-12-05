@@ -45,15 +45,12 @@
        (* score)))
 
 (defn update-board [board score]
-  (if (:winner board)
-    board
-    (->>
-      (mark-board (:board board) score)
-      ((fn [new-board]
-         (let [winner? (winning-board? new-board)]
-           {:board new-board
-            :winner winner?
-            :score (if winner? (score-for-board new-board score) nil)}))))))
+  (->> (mark-board (:board board) score)
+       ((fn [new-board]
+          (let [winner? (winning-board? new-board)]
+            {:board new-board
+             :winner winner?
+             :score (if winner? (score-for-board new-board score) nil)})))))
 
 (defn update-boards [boards score]
   (map #(update-board % score) boards))
@@ -62,7 +59,8 @@
   (loop [boards boards
          scores scores
          winners []]
-    (if (empty? scores)
+    (if (or (empty? scores)
+            (= (count winners) (count boards)))
       winners
       (let [score (first scores)
             new-boards (update-boards boards score)
