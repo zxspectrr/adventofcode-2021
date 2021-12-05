@@ -10,7 +10,8 @@
    :winner false})
 
 (defn load-scores-and-boards []
-  (let [lines (s/split-lines (slurp "resources/small-bingo.txt"))
+  (let [lines  (->> (slurp "resources/small-bingo.txt")
+                    (s/split-lines))
         scores (->> (s/split (first lines) #",")
                     (map #(Integer/parseInt %)))
         boards (->> (filter #(not= "" %) (rest lines))
@@ -35,11 +36,21 @@
 (defn winning-board? [board]
   (or (check-row board) (check-row (pivot board))))
 
+(defn score-for-board [board score]
+  (->> board
+       (mapcat #(do %))
+       (filter #(false? (second %)))
+       (map first)
+       (reduce +)
+       (* score)))
+
 (defn update-board [board score]
   (->> (mark-board (:board board) score)
-       ((fn [new-board] {:board new-board
-                         :winner (winning-board? new-board)
-                         :score (if (winning-board? new-board) score nil)}))))
+       ((fn [new-board]
+          (let [winner? (winning-board? new-board)]
+            {:board new-board
+             :winner winner?
+             :score (if winner? (score-for-board new-board score) nil)})))))
 
 (defn update-boards [boards score]
   (map #(update-board % score) boards))
@@ -57,28 +68,17 @@
                scores)
        :winners))
 
-(defn score-for-board [board]
-  (->> (:board board)
-       (mapcat #(do %))
-       (filter #(false? (second %)))
-       (map first)
-       (reduce +)
-       (* (:score board))))
-
-(comment
-  (part1))
-
 (defn part1 []
   (->> (load-scores-and-boards)
        ((fn [[scores boards]] (process-scores boards scores)))
        (first)
-       (score-for-board)))
+       (:score)))
 
 (defn part2 []
   (->> (load-scores-and-boards)
        ((fn [[scores boards]] (process-scores boards scores)))
        (last)
-       (score-for-board)))
+       (:score)))
 
 
 
