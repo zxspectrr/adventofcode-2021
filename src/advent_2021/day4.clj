@@ -10,7 +10,7 @@
    :winner false})
 
 (defn load-scores-and-boards []
-  (let [lines (s/split-lines (slurp "resources/bingo.txt"))
+  (let [lines (s/split-lines (slurp "resources/small-bingo.txt"))
         scores (->> (s/split (first lines) #",")
                     (map #(Integer/parseInt %)))
         boards (->> (filter #(not= "" %) (rest lines))
@@ -21,8 +21,7 @@
 (defn mark-board [board score]
   (map (fn [line]
         (map (fn [[board-value selected]]
-                 [board-value
-                  (or selected (= board-value score))]) line))
+                 [board-value (or selected (= board-value score))]) line))
        board))
 
 (defn pivot [dataset] (apply map vector dataset))
@@ -45,18 +44,18 @@
 (defn update-boards [boards score]
   (map #(update-board % score) boards))
 
-(defn run-game [p-boards p-scores]
-  (loop [boards p-boards
-         scores p-scores
-         winners []]
-    (let [score (first scores)
-          updated-boards (update-boards boards score)
-          new-winners (filter #(:winner %) updated-boards)
-          remaining-boards (filter #(not (:winner %)) updated-boards)
-          all-winners (concat winners new-winners)]
-      (if (= 1 (count scores))
-        all-winners
-        (recur remaining-boards (rest scores) all-winners)))))
+(defn process-score [game-state score]
+  (let [{players :playing winners :winners} game-state
+        new-boards (update-boards players score)
+        {finished true playing false} (group-by #(true? (:winner %)) new-boards)]
+    {:winners (concat winners finished)
+     :playing playing}))
+
+(defn process-scores [boards scores]
+  (->> (reduce process-score
+               {:winners [] :playing boards}
+               scores)
+       :winners))
 
 (defn score-for-board [board]
   (->> (:board board)
@@ -66,15 +65,18 @@
        (reduce +)
        (* (:score board))))
 
+(comment
+  (part1))
+
 (defn part1 []
   (->> (load-scores-and-boards)
-       ((fn [[scores boards]] (run-game boards scores)))
+       ((fn [[scores boards]] (process-scores boards scores)))
        (first)
        (score-for-board)))
 
 (defn part2 []
   (->> (load-scores-and-boards)
-       ((fn [[scores boards]] (run-game boards scores)))
+       ((fn [[scores boards]] (process-scores boards scores)))
        (last)
        (score-for-board)))
 
