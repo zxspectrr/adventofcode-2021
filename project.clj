@@ -7,5 +7,5 @@
                  [clj-commons/pomegranate "1.2.1"]
                  [com.taoensso/timbre "5.1.0"]
                  [cheshire "5.10.0"]]
-
+  :plugins [[lein-eftest "0.5.9"]]
   :repl-options {:init-ns advent-2021.core})
