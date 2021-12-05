@@ -6,15 +6,12 @@
        ((fn [[x y]] {:x x :y y}))))
 
 (defn load-lines []
-  (let [lines  (->> (slurp "resources/small-lines.txt")
-                    (s/split-lines))
-        cells (->> (map (fn [line] (s/split line #" -> ")) lines)
-                   (map (fn [line]
-                          {:start (parse-coords (first line))
-                           :end (parse-coords (second line))})))]
-
-
-    cells))
-
+  (->> (slurp "resources/small-lines.txt")
+       (s/split-lines)
+       (map (fn [line] (s/split line #" -> ")))
+       (map (fn [line]
+              {:start (parse-coords (first line))
+               :end (parse-coords (second line))}))))
 (comment
+  (load-lines)
   (s/split "0,9 -> 5,9" #" -> "))
