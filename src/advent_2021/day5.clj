@@ -1,20 +1,17 @@
 (ns advent-2021.day5
   (:require [clojure.string :as s]
-            [clojure.pprint :refer [pprint]]))
+            [clojure.pprint :refer [pprint]]
+            [clojure.set :as set]))
 
 (defn parse-coords [coord-string]
   (->> (s/split coord-string #",")
        (map (fn [string-num] (Integer/parseInt string-num)))
        ((fn [[x y]] {:x x :y y}))))
 
-(comment
-  (load-lines)
-  (straight-lines))
-
 (defn find-line-type [line]
   (let [{start :start end :end} line]
-    (if (= (:x start) (:x end)) :horizontal
-      (if (= (:y start) (:y end)) :vertical))))
+    (if (= (:x start) (:x end)) :vertical
+      (if (= (:y start) (:y end)) :horizontal))))
 
 (defn string-to-line [line-string]
   (->> (s/split line-string #" -> ")
@@ -26,7 +23,7 @@
        (#(assoc % :type (find-line-type %)))))
 
 (defn load-lines []
-  (->> (slurp "resources/small-lines.txt")
+  (->> (slurp "resources/lines.txt")
        (s/split-lines)
        (map #(string-to-line %))))
 
@@ -35,6 +32,32 @@
 (defn straight-lines []
   (->> (load-lines)
        (filter straight-line?)))
+
+(defn coords-for-line [line]
+  (let [{start :start end :end} line]
+    (->> (case (:type line)
+           :horizontal (map #(do {:x % :y (:y start)})
+                            (range (:x start) (inc (:x end))))
+           :vertical (map #(do {:x (:x start) :y %})
+                          (range (:y start) (inc (:y end))))
+           [])
+         (set))))
+
+(defn find-intersections-for-lines [line1 line2]
+  (->> (set/intersection (coords-for-line line1) (coords-for-line line2))
+       (#(if (not-empty %) %))))
+
+(defn find-intersection-points [lines]
+  (->> (map (fn [line]
+              (let [other-lines (filter #(not= % line) lines)]
+                (map (fn [other-line]
+                       (find-intersections-for-lines line other-line))
+                     other-lines)))
+            lines)
+       (flatten)
+       (filter #(not (nil? %)))
+       (reduce concat [])
+       (set)))
 
 (defn line-matches-point? [line point]
   (let [{start :start end :end} line
@@ -50,6 +73,19 @@
 
 (defn lines-for-point [point lines]
   (filter #(line-matches-point? % point) lines))
+
+;(defn part1 []
+;  (let [lines (straight-lines)
+;        grid (create-grid)]
+;    (->> (filter #(>= (count (lines-for-point % lines)) 2) grid)
+;         (count))))
+
+(comment
+  (let [lines (straight-lines)
+        points (find-intersection-points lines)]
+    (->> (filter #(>= (count (lines-for-point % lines)) 2) points)
+         (count))))
+;(flatten)))
 
 
 (comment
