@@ -7,6 +7,10 @@
        (map (fn [string-num] (Integer/parseInt string-num)))
        ((fn [[x y]] {:x x :y y}))))
 
+(comment
+  (load-lines)
+  (straight-lines))
+
 (defn find-line-type [line]
   (let [{start :start end :end} line]
     (if (= (:x start) (:x end)) :horizontal
@@ -14,9 +18,11 @@
 
 (defn string-to-line [line-string]
   (->> (s/split line-string #" -> ")
+       (map parse-coords)
+       (sort-by (juxt :x :y))
        ((fn [coords]
-          {:start (parse-coords (first coords))
-           :end (parse-coords (second coords))}))
+          {:start (first coords)
+           :end (second coords)}))
        (#(assoc % :type (find-line-type %)))))
 
 (defn load-lines []
@@ -45,11 +51,6 @@
 (defn lines-for-point [point lines]
   (filter #(line-matches-point? % point) lines))
 
-;(defn part1 []
-;  (let [lines (straight-lines)
-;        grid (create-grid)]
-;    (->> (filter #(>= (count (lines-for-point % lines)) 2) grid)
-;         (count))))
 
 (comment
   (part1)
