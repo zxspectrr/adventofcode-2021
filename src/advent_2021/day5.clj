@@ -4,28 +4,27 @@
 
 (defn parse-coords [coord-string]
   (->> (s/split coord-string #",")
-       (map (fn [string-num] (Integer/parseInt string-num)))))
+       (map (fn [string-num] (Integer/parseInt string-num)))
+       ((fn [[x y]] {:x x :y y}))))
+
+(defn find-line-type [line]
+  (let [{start :start end :end} line]
+    (if (= (:x start) (:x end)) :horizontal
+      (if (= (:y start) (:y end)) :vertical))))
 
 (defn string-to-line [line-string]
   (->> (s/split line-string #" -> ")
-       (map parse-coords)
-       (sort-by first)
-       (sort-by last)
-       ((fn [[start end]]
-          {:start {:x (first start)
-                   :y (last start)}
-           :end {:x (first end)
-                 :y (last end)}}))))
-(comment
-  (load-lines))
-
-(defn straight-line? [{start :start end :end}]
-  (or (= (:x start) (:x end)) (= (:y start) (:y end))))
+       ((fn [coords]
+          {:start (parse-coords (first coords))
+           :end (parse-coords (second coords))}))
+       (#(assoc % :type (find-line-type %)))))
 
 (defn load-lines []
-  (->> (slurp "resources/lines.txt")
+  (->> (slurp "resources/small-lines.txt")
        (s/split-lines)
        (map #(string-to-line %))))
+
+(defn straight-line? [{type :type}] (some? type))
 
 (defn straight-lines []
   (->> (load-lines)
@@ -46,39 +45,12 @@
 (defn lines-for-point [point lines]
   (filter #(line-matches-point? % point) lines))
 
-(defn create-grid []
-  (map (fn [[x y]] {:x x :y y})
-       (for [x (range 0 1000000)
-             y (range 0 1000000)]
-         [x y])))
-
-(defn part1 []
-  (let [lines (straight-lines)
-        grid (create-grid)]
-    (->> (filter #(>= (count (lines-for-point % lines)) 2) grid)
-         (count))))
+;(defn part1 []
+;  (let [lines (straight-lines)
+;        grid (create-grid)]
+;    (->> (filter #(>= (count (lines-for-point % lines)) 2) grid)
+;         (count))))
 
 (comment
   (part1)
-  (lines-for-point {:x 7 :y 4} (straight-lines))
-
-  (line-matches-point? {:start {:x 7, :y 0}, :end {:x 7, :y 4}}
-                       {:x 7 :y 4})
-  ;
-  ;(line-matches-point? {:start {:x 0, :y 9}, :end {:x 5, :y 9}}
-  ;                     {:x 0 :y 9})
-
-
-  (sort-by ) (straight-lines)
-
-  (let [lines (straight-lines)
-        grid (create-grid)]
-    (->> (filter #(>= (count (lines-for-point % lines)) 2) grid)
-         (count)))
-
-  (->> (straight-lines)
-       (lines-for-point {:x 3 :y 4}))
-       ;(count))
-
-   (load-lines)
-  (s/split "0,9 -> 5,9" #" -> "))
+  (lines-for-point {:x 7 :y 4} (straight-lines)))
