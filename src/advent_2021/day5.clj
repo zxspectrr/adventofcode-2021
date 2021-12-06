@@ -23,7 +23,7 @@
   (or (= (:x start) (:x end)) (= (:y start) (:y end))))
 
 (defn load-lines []
-  (->> (slurp "resources/small-lines.txt")
+  (->> (slurp "resources/lines.txt")
        (s/split-lines)
        (map #(string-to-line %))))
 
@@ -48,6 +48,37 @@
 
 (defn create-grid []
   (map (fn [[x y]] {:x x :y y})
-       (for [x (range 0 10)
-             y (range 0 10)]
+       (for [x (range 0 1000000)
+             y (range 0 1000000)]
          [x y])))
+
+(defn part1 []
+  (let [lines (straight-lines)
+        grid (create-grid)]
+    (->> (filter #(>= (count (lines-for-point % lines)) 2) grid)
+         (count))))
+
+(comment
+  (part1)
+  (lines-for-point {:x 7 :y 4} (straight-lines))
+
+  (line-matches-point? {:start {:x 7, :y 0}, :end {:x 7, :y 4}}
+                       {:x 7 :y 4})
+  ;
+  ;(line-matches-point? {:start {:x 0, :y 9}, :end {:x 5, :y 9}}
+  ;                     {:x 0 :y 9})
+
+
+  (sort-by ) (straight-lines)
+
+  (let [lines (straight-lines)
+        grid (create-grid)]
+    (->> (filter #(>= (count (lines-for-point % lines)) 2) grid)
+         (count)))
+
+  (->> (straight-lines)
+       (lines-for-point {:x 3 :y 4}))
+       ;(count))
+
+   (load-lines)
+  (s/split "0,9 -> 5,9" #" -> "))
