@@ -47,17 +47,23 @@
   (->> (set/intersection (coords-for-line line1) (coords-for-line line2))
        (#(if (not-empty %) %))))
 
+(comment
+  (->> (straight-lines)
+       (find-intersection-points)))
+
 (defn find-intersection-points [lines]
-  (->> (map (fn [line]
-              (let [other-lines (filter #(not= % line) lines)]
-                (map (fn [other-line]
-                       (find-intersections-for-lines line other-line))
-                     other-lines)))
-            lines)
-       (flatten)
-       (filter #(not (nil? %)))
-       (reduce concat [])
-       (set)))
+  (->> (reduce
+         (fn [all line]
+           (let [other-lines (filter #(not= % line) lines)]
+             (->> (reduce
+                    (fn [all other-line]
+                      (->> (find-intersections-for-lines line other-line)
+                           (apply conj all)))
+                    #{}
+                    other-lines)
+                  (apply conj all))))
+         #{}
+         lines)))
 
 (defn line-matches-point? [line point]
   (let [{start :start end :end} line
@@ -74,20 +80,8 @@
 (defn lines-for-point [point lines]
   (filter #(line-matches-point? % point) lines))
 
-;(defn part1 []
-;  (let [lines (straight-lines)
-;        grid (create-grid)]
-;    (->> (filter #(>= (count (lines-for-point % lines)) 2) grid)
-;         (count))))
-
-(comment
+(defn part1 []
   (let [lines (straight-lines)
         points (find-intersection-points lines)]
     (->> (filter #(>= (count (lines-for-point % lines)) 2) points)
          (count))))
-;(flatten)))
-
-
-(comment
-  (part1)
-  (lines-for-point {:x 7 :y 4} (straight-lines)))
