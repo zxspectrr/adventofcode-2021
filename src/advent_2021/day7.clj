@@ -5,7 +5,7 @@
   (-> input-string Double/parseDouble long))
 
 (defn load-values []
-  (->> (slurp "resources/day7-small.txt")
+  (->> (slurp "resources/day7.txt")
        (#(str/split % #","))
        (map parse-long)))
 
@@ -17,17 +17,12 @@
   (->> (map #(fuel-cost % destination) crabs)
        (reduce +)))
 
-(defn index-of-smallest [col]
-  (first (apply min-key second (map-indexed vector col))))
+(defn find-range [crabs]
+  (range (inc (apply max crabs))))
 
-(defn find-cheapest-cost [crabs]
-  (as-> crabs _
-        (apply max _)
-        (range (inc _))
-        (map #(find-costs crabs %) _)
-        (index-of-smallest _)))
+(defn min-cost [crabs]
+  (->> (map #(find-costs crabs %) (find-range crabs))
+       (apply min)))
 
-(comment
-  (find-cheapest-cost input))
-
-(def input (load-values))
+(defn part1 []
+  (min-cost (load-values)))
