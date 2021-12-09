@@ -49,6 +49,14 @@
           {}
           signals))
 
+
+(defn difference-count [candidate reference]
+  (->> (clojure.set/difference (set (seq candidate)) (set (seq reference)))
+       (count)))
+
+(defn five? [candidate six-key]
+  (if (= 1 (difference-count candidate six-key)) true false))
+
 (defn has-all-digits? [candidate reference]
   (clojure.set/subset? (set reference) (set candidate)))
 
@@ -71,7 +79,7 @@
         three-five-two (filter #(= 5 (count %)) signals)
         three-key (first (filter #(has-all-digits? % one-key) three-five-two))
         five-two (filter #(not (= three-key %)) three-five-two)
-        five-key (first (filter #(has-all-digits? % six-key) five-two))
+        five-key (first (filter #(five? % six-key) five-two))
         two-key (first (filter #(not (= five-key %)) five-two))]
     (merge {3 three-key
             5 five-key
@@ -81,4 +89,18 @@
 (defn build-signal-map [signals]
   (->> (find-unique-signals signals)
        (find-0-6-9 signals)
-       (find-3-5-2 signals)))
+       (find-3-5-2 signals)
+       (clojure.set/map-invert)))
+
+(defn extract-reading [signal-map readings]
+  (->> (map #(signal-map %) readings)
+       (map str)
+       (str/join)
+       (Integer/parseInt)))
+
+(defn score-for-readings [[signals readings]]
+  (let [signal-map (build-signal-map signals)
+        reading-vals (extract-reading signal-map readings)]
+    [signal-map reading-vals]))
+
+(map score-for-readings input)
