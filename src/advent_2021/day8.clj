@@ -1,7 +1,6 @@
 (ns advent-2021.day8
   (:require [clojure.string :as str]))
 
-
 (defn sort-string [string]
   (reduce str (sort string)))
 
@@ -34,11 +33,6 @@
        (filter unique-digit-length?)
        (count)))
 
-(def line "acedgfb cdfbe gcdfa fbcad dab cefabd cdfgeb eafb cagedb ab | cdfeb fcadb cdfeb cdbaf")
-(def signals (first (first input)))
-
-(def signals (first (parse-line line)))
-
 (defn unique-signal [signal]
   (case (count signal)
     2 1
@@ -46,9 +40,6 @@
     3 7
     7 8
     nil))
-
-(unique-signal "abcc5")
-
 
 (defn find-unique-signals [signals]
   (reduce (fn [acc x]
@@ -58,13 +49,8 @@
           {}
           signals))
 
-
-(def unique-signal-map (find-unique-signals signals))
-
 (defn has-all-digits? [candidate reference]
   (clojure.set/subset? (set reference) (set candidate)))
-
-(has-all-digits? "abc" "be")
 
 (defn find-0-6-9 [signals unique-signal-map]
   (let [one-key (unique-signal-map 1)
@@ -77,23 +63,22 @@
     (merge {0 zero-key
             9 nine-key
             6 six-key}
-            ;9 nine-key 6 six-key}
            unique-signal-map)))
 
-(find-0-6-9 signals unique-signal-map)
+(defn find-3-5-2 [signals signal-map]
+  (let [one-key (signal-map 1)
+        six-key (signal-map 6)
+        three-five-two (filter #(= 5 (count %)) signals)
+        three-key (first (filter #(has-all-digits? % one-key) three-five-two))
+        five-two (filter #(not (= three-key %)) three-five-two)
+        five-key (first (filter #(has-all-digits? % six-key) five-two))
+        two-key (first (filter #(not (= five-key %)) five-two))]
+    (merge {3 three-key
+            5 five-key
+            2 two-key}
+           signal-map)))
 
-
-
-
-;
-;if missing 1 chars it's 6
-;if missing 4 chars its 0
-;else 9
-;
-;if it has 1 its 3
-
-
-
-
-
-
+(defn build-signal-map [signals]
+  (->> (find-unique-signals signals)
+       (find-0-6-9 signals)
+       (find-3-5-2 signals)))
