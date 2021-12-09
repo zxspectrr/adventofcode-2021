@@ -1,10 +1,13 @@
 (ns advent-2021.day6
   (:require [clojure.string :as str]))
 
+(defn parse-long [input-string]
+  (-> input-string Double/parseDouble long))
+
 (defn load-values []
-  (->> (slurp "resources/day6.txt")
+  (->> (slurp "resources/day6-small.txt")
        (#(str/split % #","))
-       (map #(Integer/parseInt %))))
+       (map parse-long)))
 
 (defn replace-zero [input]
   (if (= 0 input) 7 input))
@@ -23,8 +26,14 @@
 
 (def input (load-values))
 
-(defn part1 []
+(defn calculate-days [days]
   (->> (reduce (fn [acc _] (draw acc))
-               input
-               (range 0 80))
-       (count)))
+             input
+             (range 0 days))
+     (count)))
+
+(defn part1 []
+  (calculate-days 80))
+
+(defn part2 []
+  (calculate-days 256))
