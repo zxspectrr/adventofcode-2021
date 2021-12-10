@@ -40,15 +40,14 @@
 
       {zero 0 one 1 two 2 three 3 four 4 five 5 six 6 seven 7 eight 8 nine 9})))
 
-(defn extract-reading [signal-map readings]
+(defn extract-reading [readings signal-map]
   (->> (map (comp str signal-map set) readings)
        (str/join)
        (Integer/parseInt)))
 
 (defn score-for-readings [[signals readings]]
-  (let [signal-map (build-signal-map signals)
-        reading-vals (extract-reading signal-map readings)]
-    reading-vals))
+  (->> (build-signal-map signals)
+       (extract-reading readings)))
 
 (defn part2 []
   (->> (map score-for-readings input)
