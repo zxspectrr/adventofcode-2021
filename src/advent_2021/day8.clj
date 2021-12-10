@@ -18,17 +18,17 @@
        (filter #{2 3 4 7})
        (count)))
 
-(defn remove-subsets [s coll] (first (remove (partial set/subset? s) coll)))
-(defn find-subset [s coll] (first (filter (partial set/subset? s) coll)))
-(defn find-superset [s coll] (first (filter (partial set/superset? s) coll)))
-(defn leftover [vals coll] (first (remove vals coll)))
-
 (defn build-signal-map [test-readings]
+  (letfn [(remove-subsets [s coll] (-> (remove (partial set/subset? s) coll) first))
+          (find-subset [s coll] (-> (filter (partial set/subset? s) coll) first))
+          (find-superset [s coll] (-> (filter (partial set/superset? s) coll) first))
+          (leftover [vals coll] (-> (remove vals coll) first))]
+
     (let [frequency-map (group-by count (map set test-readings))
-          one (first (frequency-map 2))
-          four (first (frequency-map 4))
-          seven (first (frequency-map 3))
-          eight (first (frequency-map 7))
+          one (-> (frequency-map 2) first)
+          four (-> (frequency-map 4) first)
+          seven (-> (frequency-map 3) first)
+          eight (-> (frequency-map 7) first)
           zero-six-nine (frequency-map 6)
           six (remove-subsets one zero-six-nine)
           nine (find-subset four zero-six-nine)
@@ -38,7 +38,7 @@
           five (find-superset six two-three-five)
           two (leftover #{three five} two-three-five)]
 
-      {zero 0 one 1 two 2 three 3 four 4 five 5 six 6 seven 7 eight 8 nine 9}))
+      {zero 0 one 1 two 2 three 3 four 4 five 5 six 6 seven 7 eight 8 nine 9})))
 
 (defn extract-reading [signal-map readings]
   (->> (map (comp str signal-map set) readings)
@@ -48,8 +48,8 @@
 (defn score-for-readings [[signals readings]]
   (let [signal-map (build-signal-map signals)
         reading-vals (extract-reading signal-map readings)]
-    [reading-vals]))
+    reading-vals))
 
 (defn part2 []
-  (->> (mapcat score-for-readings input)
+  (->> (map score-for-readings input)
        (reduce +)))
