@@ -7,7 +7,7 @@
        (map #(str/split % #" "))))
 
 (def input
-  (->> (slurp "resources/day8-small.txt")
+  (->> (slurp "resources/day8.txt")
        (str/split-lines)
        (map parse-line)))
 
@@ -41,8 +41,7 @@
       {zero 0 one 1 two 2 three 3 four 4 five 5 six 6 seven 7 eight 8 nine 9}))
 
 (defn extract-reading [signal-map readings]
-  (->> (map #(signal-map (set %)) readings)
-       (map str)
+  (->> (map (comp str signal-map set) readings)
        (str/join)
        (Integer/parseInt)))
 
