@@ -1,99 +1,48 @@
 (ns advent-2021.day8
-  (:require [clojure.string :as str]))
-
-(defn sort-string [string]
-  (reduce str (sort string)))
-
-(defn parse-string [string]
-  (->> (str/split string #" ")
-       (map sort-string)))
+  (:require [clojure.string :as str]
+            [clojure.set :as set]))
 
 (defn parse-line [line]
-  (->>
-    (str/split line #" \| ")
-    ((fn [[signals digits]]
-       [(parse-string signals)
-        (parse-string digits)]))))
+  (->> (str/split line #" \| ")
+       (map #(str/split % #" "))))
 
 (def input
   (->> (slurp "resources/day8-small.txt")
        (str/split-lines)
        (map parse-line)))
 
-(defn collection-contains? [coll value]
-  (not (nil? (some #(= value %) coll))))
-
-(defn unique-digit-length? [value]
-  (collection-contains? [2 3 4 7] value))
-
 (defn part1 []
   (->> (map second input)
        (flatten)
        (map count)
-       (filter unique-digit-length?)
+       (filter #{2 3 4 7})
        (count)))
 
-(defn unique-signal [signal]
-  (case (count signal)
-    2 1
-    4 4
-    3 7
-    7 8
-    nil))
+(defn remove-subsets [s coll] (first (remove (partial set/subset? s) coll)))
+(defn find-subset [s coll] (first (filter (partial set/subset? s) coll)))
+(defn find-superset [s coll] (first (filter (partial set/superset? s) coll)))
+(defn leftover [vals coll] (first (remove vals coll)))
 
-(defn find-unique-signals [signals]
-  (reduce (fn [acc x]
-            (if-let [n (unique-signal x)]
-              (assoc acc n x)
-              acc))
-          {}
-          signals))
+(defn build-signal-map [test-readings]
+    (let [signal-lengths (group-by count (map set test-readings))
+          first-val (fn [idx] (first (signal-lengths idx)))
+          one (first-val 2)
+          four (first-val 4)
+          seven (first-val 3)
+          eight (first-val 7)
+          zero-six-nine (signal-lengths 6)
+          six (remove-subsets one zero-six-nine)
+          nine (find-subset four zero-six-nine)
+          zero (leftover #{six nine} zero-six-nine)
+          two-three-five (signal-lengths 5)
+          three (find-subset one two-three-five)
+          five (find-superset six two-three-five)
+          two (leftover #{three five} two-three-five)]
 
-
-(defn difference-count [candidate reference]
-  (->> (clojure.set/difference (set (seq candidate)) (set (seq reference)))
-       (count)))
-
-(defn five? [candidate six-key]
-  (if (= 1 (difference-count candidate six-key)) true false))
-
-(defn has-all-digits? [candidate reference]
-  (clojure.set/subset? (set reference) (set candidate)))
-
-(defn find-0-6-9 [signals unique-signal-map]
-  (let [one-key (unique-signal-map 1)
-        four-key (unique-signal-map 4)
-        zero-six-nine (filter #(= 6 (count %)) signals)
-        zero-key (first (filter #(not (has-all-digits? % one-key)) zero-six-nine))
-        six-nine (filter #(not (= zero-key %)) zero-six-nine)
-        nine-key (first (filter #(has-all-digits? % four-key) six-nine))
-        six-key (first (filter #(not (= nine-key %)) six-nine))]
-    (merge {0 zero-key
-            9 nine-key
-            6 six-key}
-           unique-signal-map)))
-
-(defn find-3-5-2 [signals signal-map]
-  (let [one-key (signal-map 1)
-        six-key (signal-map 6)
-        three-five-two (filter #(= 5 (count %)) signals)
-        three-key (first (filter #(has-all-digits? % one-key) three-five-two))
-        five-two (filter #(not (= three-key %)) three-five-two)
-        five-key (first (filter #(five? % six-key) five-two))
-        two-key (first (filter #(not (= five-key %)) five-two))]
-    (merge {3 three-key
-            5 five-key
-            2 two-key}
-           signal-map)))
-
-(defn build-signal-map [signals]
-  (->> (find-unique-signals signals)
-       (find-0-6-9 signals)
-       (find-3-5-2 signals)
-       (clojure.set/map-invert)))
+      {zero 0 one 1 two 2 three 3 four 4 five 5 six 6 seven 7 eight 8 nine 9}))
 
 (defn extract-reading [signal-map readings]
-  (->> (map #(signal-map %) readings)
+  (->> (map #(signal-map (set %)) readings)
        (map str)
        (str/join)
        (Integer/parseInt)))
@@ -101,6 +50,8 @@
 (defn score-for-readings [[signals readings]]
   (let [signal-map (build-signal-map signals)
         reading-vals (extract-reading signal-map readings)]
-    [signal-map reading-vals]))
+    [reading-vals]))
 
-(map score-for-readings input)
+(defn part2 []
+  (->> (mapcat score-for-readings input)
+       (reduce +)))
