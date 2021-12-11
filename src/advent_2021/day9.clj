@@ -37,7 +37,7 @@
 (defn risk [coordinate]
   (inc (get-height coordinate)))
 
-(defn answer-01 []
+(defn part1 []
   (->> (build-all-coordinates input)
        (low-points)
        (map risk)
@@ -55,7 +55,7 @@
         basin
         (recur (into basin expanded))))))
 
-(defn answer-02 []
+(defn part2 []
   (->> (build-all-coordinates input)
        (low-points)
        (map basin)
