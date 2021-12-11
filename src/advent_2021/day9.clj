@@ -1,74 +1,65 @@
 (ns advent-2021.day9
-  (:require [clojure.string :as str]))
+  (:require [clojure.string :as str]
+            [clojure.set :as set]))
 
 (defn parse-int [str]
   (Integer/parseInt str))
 
-(def input
-  (->> (slurp "resources/day9-small.txt")
-       (str/split-lines)
-       (map #(->> (into [] (map parse-int (re-seq #"\d" %)))))
-       (into [])))
+(def input (mapv (fn [line]
+                   (mapv #(parse-int (str %)) line))
+                 (str/split-lines (slurp "resources/day9.txt"))))
 
-(defn build-points [input]
-  (->> (map-indexed
-         (fn [y heights]
-           (map-indexed
-             (fn [x height]
-               {:height height :coords [x y]})
-             heights))
-         input)
-       (flatten)))
+(defn adjacent-coordinates [x y]
+  [[(dec x) y] [(inc x) y] [x (inc y)] [x (dec y)]])
 
-(defn find-neighbours [point points]
-  (let [[x y] (:coords point)
-        neighbour-coords #{[(dec x) y]
-                           [(inc x) y]
-                           [x (dec y)]
-                           [x (inc y)]}]
-    (filter #(some? (neighbour-coords (:coords %))) points)))
+(defn get-height [[x y]]
+  (get-in input [y x]))
 
-(defn smaller-than-neighbours? [{:keys [height] :as point} points]
-    (->> (find-neighbours point points)
-         (map :height)
-         (reduce min)
-         (< height)))
+(defn adjacent-heights [[x y]]
+  (keep get-height (adjacent-coordinates x y)))
 
-(defn find-low-points [points]
-  (filter #(smaller-than-neighbours? % points) points))
+(defn low-point [coord]
+  (let [height (get-height coord)
+        surrounding (adjacent-heights coord)]
+    (< height (apply min surrounding))))
 
-(defn part1 []
-  (->> (build-points input)
-       (find-low-points)
-       (map #(inc (:height %)))
+(defn build-all-coordinates [input]
+  (let [num-cols (count (first input))
+        num-rows (count input)]
+    (for [x (range 0 num-cols)
+          y (range 0 num-rows)]
+      [x y])))
+
+(defn low-points [all-coords]
+  (let [coords all-coords]
+    (filter low-point coords)))
+
+(defn risk [coordinate]
+  (inc (get-height coordinate)))
+
+(defn answer-01 []
+  (->> (build-all-coordinates input)
+       (low-points)
+       (map risk)
        (reduce +)))
 
-(defn is-top-height? [point]
-  (= (:height point) 9))
+(defn neighbours [[x y]]
+  (->> (adjacent-coordinates x y)
+       (filter #(let [height (get-height %)]
+                  (and height (not= 9 height))))))
 
-(def do-find-basin-neighbours-neighbours
-  (memoize
-    (fn [basin-point points]
-      (->> (find-neighbours basin-point points)
-           (remove is-top-height?)))))
+(defn basin [low-point]
+  (loop [basin #{low-point}]
+    (let [expanded (set/difference (set (mapcat neighbours basin)) basin)]
+      (if (empty? expanded)
+        basin
+        (recur (into basin expanded))))))
 
-(defn build-basin [basin-points points]
-  (let [new-points (->> (mapcat #(do-find-basin-neighbours-neighbours % points)
-                                basin-points)
-                        (set)
-                        (into basin-points))]
-    (if (= (count new-points) (count basin-points))
-      new-points
-      (recur new-points points))))
-
-(defn part2 []
-  (let [points (build-points input)
-        basins (reduce (fn [basins point]
-                         (conj basins (build-basin #{point} points)))
-                       #{}
-                       (find-low-points points))]
-    (->> (map count basins)
-         (sort)
-         (reverse)
-         (take 3)
-         (reduce *))))
+(defn answer-02 []
+  (->> (build-all-coordinates input)
+       (low-points)
+       (map basin)
+       (sort-by count >)
+       (take 3)
+       (map count)
+       (apply *)))
