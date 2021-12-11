@@ -5,7 +5,7 @@
   (Integer/parseInt str))
 
 (def input
-  (->> (slurp "resources/day9.txt")
+  (->> (slurp "resources/day9-small.txt")
        (str/split-lines)
        (map #(->> (into [] (map parse-int (re-seq #"\d" %)))))
        (into [])))
@@ -60,16 +60,19 @@
       new-points
       (recur new-points points))))
 
-(def points (build-points input))
+(defn part2 []
+  (let [basins (reduce (fn [basins point]
+                         (conj basins (build-basin #{point} points)))
+                       #{}
+                       (find-low-points input))]
+    (->> (map count basins)
+         (sort)
+         (reverse)
+         (take 3)
+         (reduce *))))
 
-(first points)
-
-(def filtered-points (remove is-top-height? points))
 
 (comment
-  (build-basin #{(first filtered-points)} (into #{} (first filtered-points)) points)
-
-
 
   (let [basins (reduce (fn [basins point]
                          (conj basins (build-basin #{point} points)))
@@ -79,33 +82,6 @@
          (sort)
          (reverse)
          (take 3)
-         (reduce *)))
+         (reduce *))))
 
-    ;    basin-counts (reduce count basins)
-    ;basin-counts)
-
-  (count #{{:height 8, :coords [1 2]}
-           {:height 8, :coords [5 2]}
-           {:height 6, :coords [2 3]}
-           {:height 7, :coords [3 3]}
-           {:height 7, :coords [4 2]}
-           {:height 5, :coords [2 2]}
-           {:height 7, :coords [3 1]}
-           {:height 8, :coords [1 4]}
-           {:height 8, :coords [0 3]}
-           {:height 6, :coords [3 2]}
-           {:height 8, :coords [4 1]}
-           {:height 7, :coords [1 3]}
-           {:height 8, :coords [4 3]}
-           {:height 8, :coords [2 1]}})
-
-  (count (build-basin #{{:height 2, :coords [0 0]}} points))
-
-  (defn find-basin-neighbours [point basin-members points]
-    ;(loop [point point]
-      (let [neighbours (build-basin point points)]
-        (if (empty? neighbours)
-          basin-members
-          (->> (map #(find-basin-neighbours % basin-members points) neighbours))
-          (recur)))))
 
