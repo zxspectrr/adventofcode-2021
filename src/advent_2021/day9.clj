@@ -2,11 +2,8 @@
   (:require [clojure.string :as str]
             [clojure.set :as set]))
 
-(defn parse-int [str]
-  (Integer/parseInt str))
-
 (def input (mapv (fn [line]
-                   (mapv #(parse-int (str %)) line))
+                   (mapv #(Integer/parseInt (str %)) line))
                  (str/split-lines (slurp "resources/day9.txt"))))
 
 (defn adjacent-coordinates [x y]
