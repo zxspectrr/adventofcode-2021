@@ -22,12 +22,11 @@
 
 (defn find-neighbours [point points]
   (let [[x y] (:coords point)
-        left [(dec x) y]
-        right [(inc x) y]
-        top [x (dec y)]
-        bottom [x (inc y)]
-        coords #{left right top bottom}]
-    (filter #(some? (coords (:coords %))) points)))
+        neighbour-coords #{[(dec x) y]
+                           [(inc x) y]
+                           [x (dec y)]
+                           [x (inc y)]}]
+    (filter #(some? (neighbour-coords (:coords %))) points)))
 
 (defn smaller-than-neighbours? [{:keys [height] :as point} points]
     (->> (find-neighbours point points)
