@@ -34,13 +34,14 @@
          (reduce min)
          (< height)))
 
-(defn part1 []
+(defn find-low-points [input]
   (as-> (build-points input) _
-        (filter #(smaller-than-neighbours? % _) _)
-        (map #(inc (:height %)) _)
-        (reduce + _)))
+        (filter #(smaller-than-neighbours? % _) _)))
 
-(def line (second input))
+(defn part1 []
+  (->> (find-low-points input)
+       (map #(inc (:height %)))
+       (reduce +)))
 
 (defn is-top-height? [point]
   (= (:height point) 9))
@@ -59,8 +60,6 @@
       new-points
       (recur new-points points))))
 
-(def basin-points (first (build-points input)))
-
 (def points (build-points input))
 
 (first points)
@@ -70,11 +69,12 @@
 (comment
   (build-basin #{(first filtered-points)} (into #{} (first filtered-points)) points)
 
-  (let [filtered-points (remove is-top-height? points)
-        basins (reduce (fn [basins point]
+
+
+  (let [basins (reduce (fn [basins point]
                          (conj basins (build-basin #{point} points)))
                        #{}
-                       filtered-points)]
+                       (find-low-points input))]
     (->> (map count basins)
          (sort)
          (reverse)
