@@ -10,36 +10,31 @@
        (map #(->> (into [] (map parse-int (re-seq #"\d" %)))))
        (into [])))
 
-(defn setup [input]
-  (loop [previous nil
-         xs input
-         results []]
-    (if (empty? xs)
-      results
-      (let [x (first xs)
-            next (second xs)
-            result {:x x :previous previous :next next}]
-        (recur x (rest xs) (conj results result))))))
+(defn build-neighbour-map [input]
+  (map-indexed
+    (fn [idx line]
+      (map-indexed
+        (fn [idx-inner point]
+          (let [upper (get-in input [(dec idx) idx-inner])
+                lower (get-in input [(inc idx) idx-inner])
+                left (get line (dec idx-inner))
+                right (get line (inc idx-inner))]
+            {:point point :neighbours (remove nil? [upper lower left right])}))
+        line))
+    input))
 
-(defn smaller-than-neighbours? [value idx grid-line]
-  (let [{:keys [x next previous]} grid-line
-        left (get x (dec idx))
-        right (get x (inc idx))
-        bottom (get next idx)
-        top (get previous idx)
-        filtered (remove nil? [value left right bottom top])
-        smallest (reduce min filtered)]
-    (= value smallest)))
+(defn smaller-than-neighbours? [point neighbours]
+  (< point (reduce min neighbours)))
 
 (defn find-smallest-points [grid-line]
-  (->> (filter (fn [[idx itm]]
-                 (smaller-than-neighbours? itm idx grid-line))
-               (map-indexed (fn [idx itm] [idx itm]) (:x grid-line)))
-       (map (fn [[_ itm]] itm))))
+  (->> (filter (fn [{:keys [point neighbours]}]
+                 (smaller-than-neighbours? point neighbours))
+               grid-line)
+       (map (fn [{:keys [:point]}] point))))
 
 (defn part1 []
   (->>
-    (setup input)
+    (build-neighbour-map input)
     (mapcat find-smallest-points)
     (map inc)
     (reduce +)))
