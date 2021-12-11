@@ -34,26 +34,27 @@
          (reduce min)
          (< height)))
 
-(defn find-low-points [input]
-  (as-> (build-points input) _
-        (filter #(smaller-than-neighbours? % _) _)))
+(defn find-low-points [points]
+  (filter #(smaller-than-neighbours? % points) points))
 
 (defn part1 []
-  (->> (find-low-points input)
+  (->> (build-points input)
+       (find-low-points)
        (map #(inc (:height %)))
        (reduce +)))
 
 (defn is-top-height? [point]
   (= (:height point) 9))
 
-(defn do-find-basin-neighbours-neighbours [basin-point points]
-  (->> (find-neighbours basin-point points)
-       (remove is-top-height?)))
-
-(def cached-find-basin-neighbours (memoize do-find-basin-neighbours-neighbours))
+(def do-find-basin-neighbours-neighbours
+  (memoize
+    (fn [basin-point points]
+      (->> (find-neighbours basin-point points)
+           (remove is-top-height?)))))
 
 (defn build-basin [basin-points points]
-  (let [new-points (->> (mapcat #(cached-find-basin-neighbours % points) basin-points)
+  (let [new-points (->> (mapcat #(do-find-basin-neighbours-neighbours % points)
+                                basin-points)
                         (set)
                         (into basin-points))]
     (if (= (count new-points) (count basin-points))
@@ -61,27 +62,13 @@
       (recur new-points points))))
 
 (defn part2 []
-  (let [basins (reduce (fn [basins point]
+  (let [points (build-points input)
+        basins (reduce (fn [basins point]
                          (conj basins (build-basin #{point} points)))
                        #{}
-                       (find-low-points input))]
+                       (find-low-points points))]
     (->> (map count basins)
          (sort)
          (reverse)
          (take 3)
          (reduce *))))
-
-
-(comment
-
-  (let [basins (reduce (fn [basins point]
-                         (conj basins (build-basin #{point} points)))
-                       #{}
-                       (find-low-points input))]
-    (->> (map count basins)
-         (sort)
-         (reverse)
-         (take 3)
-         (reduce *))))
-
-
