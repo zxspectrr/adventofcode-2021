@@ -32,7 +32,7 @@
               (safe-pop stack)))]
 
     (loop [chars line
-           open-stack []]
+           open-stack (list)]
       (let [current-char (first chars)
             current-open-char (peek open-stack)]
         (cond
@@ -43,27 +43,19 @@
 (defn find-corrupt-char [line]
   (->> (walk-line line) :bad-char))
 
-(defn not-corrupt? [{:keys [bad-char]}]
-  (nil? bad-char))
-
-(defn stack-to-vector [stack]
-  (loop [result []
-         stack stack]
-    (if (empty? stack)
-      result
-      (recur (conj result (peek stack)) (safe-pop stack)))))
-
 (defn auto-complete-score-for-chars [{:keys [stack]}]
   (letfn [(calc-complete-score [total-score char]
             (->> (* total-score 5)
                  (+ (autocomplete-char-scores char))))]
 
-    (->> (stack-to-vector stack)
-         (map close-char-map)
+    (->> (map close-char-map stack)
          (reduce calc-complete-score 0))))
 
 (defn middle-value [coll]
   (nth coll (quot (count coll) 2)))
+
+(defn not-corrupt? [{:keys [bad-char]}]
+  (nil? bad-char))
 
 (defn part1 []
   (->> (keep find-corrupt-char lines)
