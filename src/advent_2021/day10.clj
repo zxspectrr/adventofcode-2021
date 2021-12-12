@@ -32,39 +32,33 @@
               (safe-pop stack)))]
 
     (loop [chars line
-           open-stack (list)]
-      (let [current-char (first chars)
-            current-open-char (peek open-stack)]
+           char-stack (list)]
+      (let [current-char (first chars)]
         (cond
-          (nil? current-char) {:stack open-stack}
-          (not (valid-char? current-char current-open-char)) {:bad-char current-char}
-          :else (recur (rest chars) (next-stack open-stack current-char)))))))
-
-(defn find-corrupt-char [line]
-  (->> (walk-line line) :bad-char))
+          (nil? current-char) {:stack char-stack}
+          (not (valid-char? current-char (peek char-stack))) {:bad-char current-char}
+          :else (recur (rest chars)
+                       (next-stack char-stack current-char)))))))
 
 (defn auto-complete-score-for-chars [{:keys [stack]}]
-  (letfn [(calc-complete-score [total-score char]
-            (->> (* total-score 5)
-                 (+ (autocomplete-char-scores char))))]
-
-    (->> (map close-char-map stack)
-         (reduce calc-complete-score 0))))
+  (->> (map close-char-map stack)
+       (reduce (fn [total-score char]
+                 (->> (* total-score 5)
+                      (+ (autocomplete-char-scores char))))
+               0)))
 
 (defn middle-value [coll]
   (nth coll (quot (count coll) 2)))
 
-(defn not-corrupt? [{:keys [bad-char]}]
-  (nil? bad-char))
-
 (defn part1 []
-  (->> (keep find-corrupt-char lines)
+  (->> (map walk-line lines)
+       (keep :bad-char)
        (map corrupt-char-scores)
        (apply +)))
 
 (defn part2 []
   (->> (map walk-line lines)
-       (filter not-corrupt?)
+       (remove :bad-char)
        (map auto-complete-score-for-chars)
        (sort)
        (middle-value)))
