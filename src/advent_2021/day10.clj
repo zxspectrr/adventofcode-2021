@@ -8,11 +8,10 @@
 
 (def open-chars #{\[ \( \{ \<})
 (def close-chars #{\] \) \} \>})
-(def close-map {\[ \] \( \) \{ \} \< \>})
-(def open-map {\] \[ \) \( \} \{ \> \<})
+(def close-char-map {\[ \] \( \) \{ \} \< \>})
 
 (defn open-char? [char] (some? (open-chars char)))
-(defn find-closing-char [open-char] (close-map open-char))
+(defn find-closing-char [open-char] (close-char-map open-char))
 
 (defn correct-close-char? [char current-open-char]
   (= (find-closing-char current-open-char)
@@ -23,20 +22,26 @@
       (open-char? char)
       (correct-close-char? char current-open-char)))
 
+(defn invalid-char? [char current-open-char]
+  (not (valid-char? char current-open-char)))
+
+(defn safe-pop [stack]
+  (if (not-empty stack) (pop stack) stack))
+
 (defn find-corrupt-char [line]
   (letfn [(next-stack [stack char]
             (if (open-char? char)
               (conj stack char)
-              (pop stack)))]
+              (safe-pop stack)))]
 
     (loop [chars line
-           open-stack (list)]
+           open-stack []]
       (let [current-char (first chars)
             current-open-char (peek open-stack)]
         (cond
           (nil? current-char) nil
-          (not (valid-char? current-char current-open-char)) current-char
-          :else (recur (rest chars) (next-stack open-stack)))))))
+          (invalid-char? current-char current-open-char) current-char
+          :else (recur (rest chars) (next-stack open-stack current-char)))))))
 
 (def corrupt-char-scores
   {\] 57 \) 3 \} 1197 \> 25137})
