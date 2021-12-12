@@ -46,7 +46,7 @@
 (def corrupt-char-scores
   {\] 57 \) 3 \} 1197 \> 25137})
 
-(part1 []
+(defn part1 []
   (->> (keep find-corrupt-char lines)
        (map corrupt-char-scores)
        (apply +)))
