@@ -4,7 +4,7 @@
 (defn parse-int [str] (Integer/parseInt str))
 
 (def lines
-  (->> (slurp "resources/day11-smaller.txt")
+  (->> (slurp "resources/day11-small.txt")
        (str/split-lines)
        (mapv (fn [line] (->> (re-seq #"\d" line)
                              (mapv parse-int))))))
@@ -14,8 +14,6 @@
              y (range 0 (count lines))]
          [[x y] {:coord [x y] :e (get-in lines [y x])}])
        (into (hash-map))))
-
-(def grid (build-grid))
 
 (defn find-point [[x y] grid]
   (get grid [x y]))
@@ -30,8 +28,7 @@
 
 (defn increment-all [points]
   (map (fn [{:keys [e] :as point}]
-         (let [new-val (if (< e 10) (inc e) e)]
-           (assoc point :e new-val)))
+         (assoc point :e (inc e)))
        points))
 
 (defn update-grid [grid points]
@@ -61,15 +58,16 @@
          flashed []]
     (let [all-points (vals grid)
           new-flashed (filter flash? all-points)
-          new-grid (update-for-flashing-points flashed grid)]
-      (if (= (count new-flashed) (count flashed))
+          new-grid (update-for-flashing-points flashed grid)
+          new-new-flashed (filter flash? (vals new-grid))]
+      (if (= (count new-flashed) (count new-new-flashed))
         new-grid
         (recur new-grid new-flashed)))))
 
 (defn kill-flashed [grid]
   (->> (vals grid)
        (map (fn [{:keys [coord e] :as point}]
-              (if (= e 10)
+              (if (> e 9)
                 {:coord coord :e 0}
                 point)))))
 
@@ -87,19 +85,23 @@
         (range 0 (count lines))))
 
 (defn process-times [times]
-  (let [g (build-grid)]
-    (->> (take (inc times) (iterate process g))
+
+    (->> (take (inc times) (iterate process (build-grid)))
          (last)
-         (display-grid))))
+         (display-grid)))
 
 (defn part1 []
-  (process-times 0))
+  (->> (process (process (build-grid)))
+       (display-grid)))
 
+
+
+lines
+(display-grid (build-grid))
+(find-point [2 0] (build-grid))
 
 
 (comment
   (def updated (process grid))
 
   (sort-by :coord (vals updated)))
-
-(bump-grid grid)
