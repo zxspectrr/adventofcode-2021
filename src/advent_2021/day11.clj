@@ -4,7 +4,7 @@
 (defn parse-int [str] (Integer/parseInt str))
 
 (def lines
-  (->> (slurp "resources/day11-small.txt")
+  (->> (slurp "resources/day11.txt")
        (str/split-lines)
        (mapv (fn [line] (->> (re-seq #"\d" line)
                              (mapv parse-int))))))
@@ -26,18 +26,18 @@
 
 (defn flash? [{:keys [e]}] (> e 9))
 
-(defn increment-all [points]
-  (map (fn [{:keys [e] :as point}]
-         (assoc point :e (inc e)))
-       points))
-
 (defn update-grid [grid points]
   (reduce (fn [g point]
             (assoc g (:coord point) point))
           grid
           points))
 
-(defn increment-points [grid points]
+(defn increment-all [points]
+  (map (fn [{:keys [e] :as point}]
+         (assoc point :e (inc e)))
+       points))
+
+(defn increment-points-for-grid [grid points]
   (->> (increment-all points)
        (update-grid grid)))
 
@@ -49,7 +49,7 @@
 (defn update-for-flashing-points [flash-points grid]
   (reduce (fn [grid point]
             (let [neighbours (get-neighbours (:coord point) grid)]
-              (increment-points grid neighbours)))
+              (increment-points-for-grid grid neighbours)))
           grid
           flash-points))
 
@@ -75,11 +75,23 @@
                 {:coord coord :e 0}
                 point)))))
 
-(defn process [grid]
+(defn get-flash-count [grid]
+  (->> (vals grid)
+       (map :e)
+       (filter #(= 0 %))
+       (count)))
+
+(defn process-grid [grid]
   (->> (bump-grid grid)
        (process-flashed)
        (kill-flashed)
        (update-grid grid)))
+
+(defn process [{:keys [grid flashcount]}]
+  (let [updated-grid (process-grid grid)
+        updated-flashcount (+ flashcount (get-flash-count updated-grid))]
+    {:grid updated-grid
+     :flashcount updated-flashcount}))
 
 (defn display-grid [grid]
   (mapv (fn [y]
@@ -88,19 +100,14 @@
                 (range 0 (count (first lines)))))
         (range 0 (count lines))))
 
-(defn process-times [times]
+(defn init []
+  {:grid (build-grid)
+   :flashcount 0})
 
-    (->> (take (inc times) (iterate process (build-grid)))
-         (last)
-         (display-grid)))
+(defn process-times [times]
+  (->> (take (inc times) (iterate process (init)))
+       (last)
+       (:flashcount)))
 
 (defn part1 []
-  (process-times 100)
-  (->> (process (build-grid))
-       (display-grid)))
-
-
-(comment
-  (def updated (process grid))
-
-  (sort-by :coord (vals updated)))
+  (process-times 100))
