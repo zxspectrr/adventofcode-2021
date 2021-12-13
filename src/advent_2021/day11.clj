@@ -53,16 +53,20 @@
           grid
           flash-points))
 
+(defn find-flashing [points flashed]
+  (->> (filter flash? points)
+       (remove #(flashed (:coord %)))))
+
 (defn process-flashed [grid]
   (loop [grid grid
-         flashed []]
+         flashed #{}]
     (let [all-points (vals grid)
-          new-flashed (filter flash? all-points)
-          new-grid (update-for-flashing-points flashed grid)
-          new-new-flashed (filter flash? (vals new-grid))]
-      (if (= (count new-flashed) (count new-new-flashed))
+          flashing (find-flashing all-points flashed)
+          flashing-coords (map :coord flashing)
+          new-grid (update-for-flashing-points flashing grid)]
+      (if (empty? flashing)
         new-grid
-        (recur new-grid new-flashed)))))
+        (recur new-grid (into flashed flashing-coords))))))
 
 (defn kill-flashed [grid]
   (->> (vals grid)
@@ -91,14 +95,9 @@
          (display-grid)))
 
 (defn part1 []
-  (->> (process (process (build-grid)))
+  (process-times 100)
+  (->> (process (build-grid))
        (display-grid)))
-
-
-
-lines
-(display-grid (build-grid))
-(find-point [2 0] (build-grid))
 
 
 (comment
