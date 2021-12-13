@@ -33,8 +33,16 @@
   (map (fn [{:keys [e] :as point}]
          (assoc point :e (inc e))) points))
 
-(defn find-flashed [grid]
-  (filter flash? grid))
+(defn update-grid [grid points]
+  (reduce (fn [g point]
+            (assoc g (:coord point) point))
+          grid
+          points))
+
+(defn bump-grid [grid]
+  (->> (vals grid)
+       (increment-all)
+       (update-grid grid)))
 
 (defn increment-points [points grid]
   (->> (increment-all points)
@@ -49,22 +57,24 @@
                  (assoc grid (:coord point) (:e point)))
                grid)))
 
+(get-neighbours {:coord [0 0]} grid)
+
+(def next-grid (bump-grid grid))
+
 (defn process-point [point grid]
   (if (flash? point)
     (increment-neighbours point grid)
     grid))
 
-(defn process [grid flashpoints]
-  (loop [flashed (filter flash? points)
-         grid grid]
+(def grid (bump-grid grid))
 
-    (let [flashed (filter flash? points)
-          neighbours (map #(increment-neighbours % grid) flashed)])))
+(defn process [grid]
+  (let [all-points (vals grid)
+        flashed (filter flash? all-points)
+        neighbours (mapcat)]
 
+    (loop [grid grid
+           flash-points (filter flash? grid)]
+      (let [flashed (filter flash? points)
+            neighbours (map #(increment-neighbours % grid) flashed)]))))
 
-(find-flashed (increment-all grid))
-
-(->> (increment-all grid)
-     (filter flash?))
-
-(def next-line (increment-all grid))
