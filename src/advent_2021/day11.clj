@@ -12,65 +12,46 @@
 (defn build-grid []
   (->> (for [x (range 0 (count (first lines)))
              y (range 0 (count lines))]
-         [[x y] {:coord [x y] :e (get-in lines [y x])}])
-       (into (hash-map))))
+         [x y])))
 
 (def grid (build-grid))
 
-(defn find-point [[x y] grid]
-  (get grid [x y]))
+(defn find-energy [[x y] lines]
+  (get-in lines [y x]))
 
-(defn get-neighbours [point grid]
-  (let [[x y] (:coord point)
-        points [[(dec x) (inc y)] [x (inc y)] [(inc x) (inc y)]
-                [(dec x) y] [(inc x) y]
-                [(dec x) (dec y)] [x (dec y)] [(inc x) (dec y)]]]
-    (keep #(find-point % grid) points)))
+(defn get-neighbours [[x y]]
+  [[(dec x) (inc y)] [x (inc y)] [(inc x) (inc y)]
+   [(dec x) y] [(inc x) y]
+   [(dec x) (dec y)] [x (dec y)] [(inc x) (dec y)]])
 
-(defn flash? [{:keys [e]}] (> e 9))
+(defn get-neighbour-energies [[x y] lines]
+  (keep #(find-energy % lines) (get-neighbours [x y])))
 
-(defn increment-all [points]
-  (map (fn [{:keys [e] :as point}]
-         (assoc point :e (inc e))) points))
+(get-neighbour-energies [0 0] lines)
 
-(defn update-grid [grid points]
-  (reduce (fn [g point]
-            (assoc g (:coord point) point))
-          grid
+(defn increment-point [[x y] lines]
+  (->> (find-energy [x y] lines)
+       (inc)
+       (assoc-in lines [y x])))
+
+(defn flash? [point lines]
+  (> (find-energy point lines) 9))
+
+(defn increment-points [points lines]
+  (reduce (fn [lines point]
+            (increment-point point lines))
+          lines
           points))
 
-(defn bump-grid [grid]
-  (->> (vals grid)
-       (increment-all)
-       (update-grid grid)))
+(defn bump-all-points [lines]
+  (increment-points grid lines))
 
-(defn increment-points [points grid]
-  (->> (increment-all points)
-       (reduce (fn [grid point]
-                 (assoc grid (:coord point) (:e point)))
-               grid)))
+(def lines (bump-all-points  lines))
 
-(defn increment-neighbours [point grid]
-  (->> (get-neighbours point grid)
-       (increment-all)
-       (reduce (fn [grid point]
-                 (assoc grid (:coord point) (:e point)))
-               grid)))
+(bump-all-neighbours)
 
-(get-neighbours {:coord [0 0]} grid)
-
-(def next-grid (bump-grid grid))
-
-(defn process-point [point grid]
-  (if (flash? point)
-    (increment-neighbours point grid)
-    grid))
-
-(def grid (bump-grid grid))
-
-(defn process [grid]
-  (let [all-points (vals grid)
-        flashed (filter flash? all-points)
+(defn process [grid lines]
+  (let [flashed (filter #(flash? % lines) grid)
         neighbours (mapcat)]
 
     (loop [grid grid
