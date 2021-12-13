@@ -14,19 +14,12 @@
         y (range 0 (count lines))]
     {:x x :y y :e (get-in lines [y x])}))
 
-;(defn build-grid []
-;  (->> (for [x (range 0 (count (first lines)))
-;             y (range 0 (count lines))]
-;         [[x y] {:coords [x y] :e (get-in lines [y x])}])
-;       (into (hash-map))))
-
 (def grid (build-grid))
 
 (defn find-point [[x y] grid]
   (first (filter (fn [{gridx :x gridy :y}]
                    (and (= x gridx) (= y gridy)))
                  grid)))
-
 
 (defn get-neighbours [{:keys [x y]} grid]
   (let [points [[(dec x) (inc y)] [x (inc y)] [(inc x) (inc y)]
@@ -36,10 +29,34 @@
 
 (get-neighbours (find-point [0 0] grid) grid)
 
-(defn flash? [energy] (> 9 energy))
+(defn flash? [{:keys [e]}] (> e 9))
 
-(defn increment-all [grid]
+(defn increment-all [points]
   (map (fn [{:keys [e] :as point}]
-         (assoc point :e (inc e))) grid))
+         (assoc point :e (inc e))) points))
+
+(defn find-flashed [grid]
+  (filter flash? grid))
+
+(defn increment-neighbours [point grid]
+  (->> (get-neighbours point grid)
+       (increment-all)))
+
+(defn update-grid-for-flash-point [point grid]
+  (->> (get-neighbours point grid)
+       (increment-all)))
+
+
+(defn process [points grid]
+  (loop [points points
+         grid grid]
+    (let [flashed (filter flash? points)
+          neighbours (map #(increment-neighbours % grid) flashed)])))
+
+
+(find-flashed (increment-all grid))
+
+(->> (increment-all grid)
+     (filter flash?))
 
 (def next-line (increment-all grid))
