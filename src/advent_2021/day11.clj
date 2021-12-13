@@ -56,17 +56,50 @@
           grid
           flash-points))
 
-(defn process [grid]
-
-  (loop [grid (bump-grid grid)]
+(defn process-flashed [grid]
+  (loop [grid grid
+         flashed []]
     (let [all-points (vals grid)
-          flashed (filter flash? all-points)
+          new-flashed (filter flash? all-points)
           new-grid (update-for-flashing-points flashed grid)]
-      (if (= (vals grid) (vals new-grid))
+      (if (= (count new-flashed) (count flashed))
         new-grid
-        (recur new-grid)))))
+        (recur new-grid new-flashed)))))
+
+(defn kill-flashed [grid]
+  (->> (vals grid)
+       (map (fn [{:keys [coord e] :as point}]
+              (if (= e 10)
+                {:coord coord :e 0}
+                point)))))
+
+(defn process [grid]
+  (->> (bump-grid grid)
+       (process-flashed)
+       (kill-flashed)
+       (update-grid grid)))
+
+(defn display-grid [grid]
+  (mapv (fn [y]
+          (mapv (fn [x]
+                  (->> (find-point [x y] grid) :e))
+                (range 0 (count (first lines)))))
+        (range 0 (count lines))))
+
+(defn process-times [times]
+  (let [g (build-grid)]
+    (->> (take (inc times) (iterate process g))
+         (last)
+         (display-grid))))
+
+(defn part1 []
+  (process-times 0))
+
+
 
 (comment
-  (process grid))
+  (def updated (process grid))
+
+  (sort-by :coord (vals updated)))
 
 (bump-grid grid)
