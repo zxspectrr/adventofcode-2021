@@ -1,75 +1,79 @@
 (ns advent-2021.day11
-  (:require [clojure.string :as str]
-            [advent-2021.utils :as u]))
+  (:require [advent-2021.utils :as u]))
 
-(def lines
-  (->> (slurp "resources/day11.txt")
-       (str/split-lines)
-       (mapv (fn [line] (->> (re-seq #"\d" line)
-                             (mapv u/parse-int))))))
+(def lines (->> (u/read-all-lines "resources/day11.txt")
+                (mapv #(->> (re-seq #"\d" %)
+                            (mapv u/parse-int)))))
 
 (defn build-grid []
-  (->> (for [x (range 0 (count (first lines)))
-             y (range 0 (count lines))]
+  (->> (for [x (range (count (first lines)))
+             y (range (count (first lines)))]
          [[x y] (get-in lines [y x])])
        (into {})))
 
-(defn find-point [point grid]
+(defn display-grid [grid]
+  (reduce (fn [l [[x y] v]] (assoc-in l [y x] v))
+          lines
+          grid))
+
+(defn find-energy [grid point]
   (get grid point))
 
-(defn get-neighbours [[x y] grid]
+(defn find-neighbours [grid [x y]]
   (let [points [[(dec x) (inc y)] [x (inc y)] [(inc x) (inc y)]
                 [(dec x) y] [(inc x) y]
                 [(dec x) (dec y)] [x (dec y)] [(inc x) (dec y)]]]
-    (filter #(some? (find-point % grid)) points)))
+    (filter #(find-energy grid %) points)))
 
-(defn flash-value? [v] (> v 9))
+(defn flash-threshhold? [v] (> v 9))
 
-(defn flash? [point grid]
-  (flash-value? (find-point point grid)))
+(defn flashing? [grid point]
+  (flash-threshhold?
+    (find-energy grid point)))
 
-(defn increment-points [points grid]
-  (reduce (fn [g p] (update g p inc))
-          grid points))
+(defn increment-point [grid point]
+  (update grid point inc))
 
 (defn increment-all-points [grid]
-  (increment-points (keys grid) grid))
+  (reduce increment-point grid (keys grid)))
 
-(defn update-for-flashing-point [grid point]
-  (-> (get-neighbours point grid)
-      (increment-points grid)))
+(defn find-flashing [grid points]
+  (filter #(flashing? grid %) points))
 
-(defn update-for-flashing-points [flash-points grid]
-  (reduce update-for-flashing-point grid flash-points))
+(defn process-flash [grid point]
+  (reduce increment-point grid
+          (find-neighbours grid point)))
 
-(defn process-flashed [grid]
+(defn process-flash-points [grid points]
+  (reduce process-flash grid points))
+
+(defn process-flashes [grid]
   (loop [grid grid
          flashed #{}]
-    (let [all-points (keys grid)
-          can-flash (remove flashed all-points)
-          flashing (filter #(flash? % grid) can-flash)
-          new-grid (update-for-flashing-points flashing grid)]
+    (let [points (keys grid)
+          can-flash (remove flashed points)
+          flashing (find-flashing grid can-flash)
+          updated-grid (process-flash-points grid flashing)]
       (if (empty? flashing)
-        new-grid
-        (recur new-grid (into flashed flashing))))))
+        updated-grid
+        (recur updated-grid (into flashed flashing))))))
 
-(defn kill-flashed [grid]
-  (u/map-vals (fn [v] (if (flash-value? v) 0 v)) grid))
+(defn kill-all-flashes [grid]
+  (u/map-vals (fn [v] (if (flash-threshhold? v) 0 v)) grid))
 
-(defn process-grid [grid]
+(defn process [grid]
   (->> (increment-all-points grid)
-       (process-flashed)
-       (kill-flashed)))
+       (process-flashes)
+       (kill-all-flashes)))
 
 (defn part1 []
-  (->> (iterate process-grid (build-grid))
+  (->> (iterate process (build-grid))
        (take 101)
-       (rest)
        (mapcat #(filter zero? (vals %)))
        (count)))
 
 (defn part2 []
-  (time
-    (->> (iterate process-grid (build-grid))
-         (take-while #(not (every? zero? (vals %))))
-         (count))))
+  (->> (iterate process (build-grid))
+       (take-while #(not (every? zero? (vals %))))
+       (count)))
+
