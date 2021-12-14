@@ -64,8 +64,7 @@
 (defn process [grid]
   (->> (increment-all-points grid)
        (process-flashes)
-       (kill-all-flashes)
-       (display-grid)))
+       (kill-all-flashes)))
 
 (defn part1 []
   (->> (iterate process (build-grid))
@@ -77,5 +76,3 @@
   (->> (iterate process (build-grid))
        (take-while #(not (every? zero? (vals %))))
        (count)))
-
-(def grid (build-grid))
