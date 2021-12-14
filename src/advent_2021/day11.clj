@@ -1,7 +1,7 @@
 (ns advent-2021.day11
   (:require [advent-2021.utils :as u]))
 
-(def lines (->> (u/read-all-lines "resources/day11.txt")
+(def lines (->> (u/read-lines "resources/day11.txt")
                 (mapv #(->> (re-seq #"\d" %)
                             (mapv u/parse-int)))))
 
@@ -64,7 +64,8 @@
 (defn process [grid]
   (->> (increment-all-points grid)
        (process-flashes)
-       (kill-all-flashes)))
+       (kill-all-flashes)
+       (display-grid)))
 
 (defn part1 []
   (->> (iterate process (build-grid))
@@ -77,3 +78,4 @@
        (take-while #(not (every? zero? (vals %))))
        (count)))
 
+(def grid (build-grid))
