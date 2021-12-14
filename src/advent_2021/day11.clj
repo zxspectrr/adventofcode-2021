@@ -26,10 +26,8 @@
   (> (find-point point grid) 9))
 
 (defn increment-points [points grid]
-  (reduce (fn [g point]
-            (update g point inc))
-          grid
-          points))
+  (reduce (fn [g p] (update g p inc))
+          grid points))
 
 (defn increment-all [grid]
   (increment-points (keys grid) grid))
