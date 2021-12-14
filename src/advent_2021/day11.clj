@@ -1,21 +1,17 @@
 (ns advent-2021.day11
   (:require [clojure.string :as str]))
 
-(defn parse-int [str] (Integer/parseInt str))
-
 (def lines
-  (->> (slurp "resources/day11-smaller.txt")
+  (->> (slurp "resources/day11.txt")
        (str/split-lines)
        (mapv (fn [line] (->> (re-seq #"\d" line)
-                             (mapv parse-int))))))
+                             (mapv #(Integer/parseInt %)))))))
 
 (defn build-grid []
   (->> (for [x (range 0 (count (first lines)))
              y (range 0 (count lines))]
          [[x y] (get-in lines [y x])])
        (into (hash-map))))
-
-(def grid (build-grid))
 
 (defn find-point [point grid]
   (get grid point))
@@ -38,9 +34,10 @@
 (defn bump-grid [grid]
   (increment-points (keys grid) grid))
 
-(defn find-flashing [points flashed]
-  (->> (filter #(flash? % grid) points)
-       (remove flashed)))
+(defn find-flashing [points flashed grid]
+  (->>
+    (remove flashed points)
+    (filter #(flash? % grid))))
 
 (defn update-for-flashing-points [flash-points grid]
   (reduce (fn [g p]
@@ -52,7 +49,7 @@
   (loop [grid grid
          flashed #{}]
     (let [all-points (keys grid)
-          flashing (find-flashing all-points flashed)
+          flashing (find-flashing all-points flashed grid)
           new-grid (update-for-flashing-points flashing grid)]
       (if (empty? flashing)
         new-grid
@@ -65,39 +62,19 @@
        (reduce (fn [g point]
                  (assoc g point 0)) grid)))
 
-(comment
-  (process-grid grid))
-
-(defn get-flash-count [grid]
-  (->> (vals grid)
-       (filter #(= 0 %))
-       (count)))
 (defn process-grid [grid]
   (->> (bump-grid grid)
-       (process-flashed)))
-       ;(kill-flashed)))
-
-(defn process [{:keys [grid flashcount]}]
-  (let [updated-grid (process-grid grid)
-        updated-flashcount (+ flashcount (get-flash-count updated-grid))]
-    {:grid updated-grid
-     :flashcount updated-flashcount}))
-
-(defn display-grid [grid]
-  (mapv (fn [y]
-          (mapv (fn [x]
-                  (->> (find-point [x y] grid) :e))
-                (range 0 (count (first lines)))))
-        (range 0 (count lines))))
-
-(defn init []
-  {:grid (build-grid)
-   :flashcount 0})
-
-(defn process-times [times]
-  (->> (take (inc times) (iterate process (init)))
-       (last)
-       (:flashcount)))
+       (process-flashed)
+       (kill-flashed)))
 
 (defn part1 []
-  (process-times 100))
+  (->> (iterate process-grid (build-grid))
+       (take 101)
+       (rest)
+       (mapcat #(filter zero? (vals %)))
+       (count)))
+
+(defn part2 []
+  (->> (iterate process-grid (build-grid))
+       (take-while #(not (every? zero? (vals %))))
+       (count)))
