@@ -1,17 +1,18 @@
 (ns advent-2021.day11
-  (:require [clojure.string :as str]))
+  (:require [clojure.string :as str]
+            [advent-2021.utils :as u]))
 
 (def lines
   (->> (slurp "resources/day11.txt")
        (str/split-lines)
        (mapv (fn [line] (->> (re-seq #"\d" line)
-                             (mapv #(Integer/parseInt %)))))))
+                             (mapv u/parse-int))))))
 
 (defn build-grid []
   (->> (for [x (range 0 (count (first lines)))
              y (range 0 (count lines))]
          [[x y] (get-in lines [y x])])
-       (into (hash-map))))
+       (into {})))
 
 (defn find-point [point grid]
   (get grid point))
@@ -22,20 +23,24 @@
                 [(dec x) (dec y)] [x (dec y)] [(inc x) (dec y)]]]
     (filter #(some? (find-point % grid)) points)))
 
+(defn flash-value? [v] (> v 9))
+
 (defn flash? [point grid]
-  (> (find-point point grid) 9))
+  (flash-value? (find-point point grid)))
 
 (defn increment-points [points grid]
   (reduce (fn [g p] (update g p inc))
           grid points))
 
-(defn increment-all [grid]
+(defn increment-all-points [grid]
   (increment-points (keys grid) grid))
 
+(defn update-for-flashing-point [grid point]
+  (-> (get-neighbours point grid)
+      (increment-points grid)))
+
 (defn update-for-flashing-points [flash-points grid]
-  (reduce (fn [g p] (increment-points (get-neighbours p g) g))
-          grid
-          flash-points))
+  (reduce update-for-flashing-point grid flash-points))
 
 (defn process-flashed [grid]
   (loop [grid grid
@@ -48,13 +53,11 @@
         new-grid
         (recur new-grid (into flashed flashing))))))
 
-(defn map-vals [f m] (into {} (map (fn [[k v]] [k (f v)]) m)))
-
 (defn kill-flashed [grid]
-  (map-vals (fn [v] (if (> v 9) 0 v)) grid))
+  (u/map-vals (fn [v] (if (flash-value? v) 0 v)) grid))
 
 (defn process-grid [grid]
-  (->> (increment-all grid)
+  (->> (increment-all-points grid)
        (process-flashed)
        (kill-flashed)))
 
@@ -66,6 +69,7 @@
        (count)))
 
 (defn part2 []
-  (->> (iterate process-grid (build-grid))
-       (take-while #(not (every? zero? (vals %))))
-       (count)))
+  (time
+    (->> (iterate process-grid (build-grid))
+         (take-while #(not (every? zero? (vals %))))
+         (count))))
