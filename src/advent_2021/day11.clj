@@ -32,10 +32,6 @@
 (defn increment-all [grid]
   (increment-points (keys grid) grid))
 
-(defn find-flashing [points flashed grid]
-  (->> (remove flashed points)
-       (filter #(flash? % grid))))
-
 (defn update-for-flashing-points [flash-points grid]
   (reduce (fn [g p] (increment-points (get-neighbours p g) g))
           grid
@@ -45,7 +41,8 @@
   (loop [grid grid
          flashed #{}]
     (let [all-points (keys grid)
-          flashing (find-flashing all-points flashed grid)
+          can-flash (remove flashed all-points)
+          flashing (filter #(flash? % grid) can-flash)
           new-grid (update-for-flashing-points flashing grid)]
       (if (empty? flashing)
         new-grid
