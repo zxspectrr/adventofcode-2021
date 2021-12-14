@@ -31,17 +31,15 @@
           grid
           points))
 
-(defn bump-grid [grid]
+(defn increment-all [grid]
   (increment-points (keys grid) grid))
 
 (defn find-flashing [points flashed grid]
-  (->>
-    (remove flashed points)
-    (filter #(flash? % grid))))
+  (->> (remove flashed points)
+       (filter #(flash? % grid))))
 
 (defn update-for-flashing-points [flash-points grid]
-  (reduce (fn [g p]
-            (increment-points (get-neighbours p g) g))
+  (reduce (fn [g p] (increment-points (get-neighbours p g) g))
           grid
           flash-points))
 
@@ -55,15 +53,13 @@
         new-grid
         (recur new-grid (into flashed flashing))))))
 
+(defn map-vals [f m] (into {} (map (fn [[k v]] [k (f v)]) m)))
+
 (defn kill-flashed [grid]
-  (->> (vec grid)
-       (filter (fn [[k v]] (> v 9)))
-       (map (fn [[k v]] k))
-       (reduce (fn [g point]
-                 (assoc g point 0)) grid)))
+  (map-vals (fn [v] (if (> v 9) 0 v)) grid))
 
 (defn process-grid [grid]
-  (->> (bump-grid grid)
+  (->> (increment-all grid)
        (process-flashed)
        (kill-flashed)))
 
