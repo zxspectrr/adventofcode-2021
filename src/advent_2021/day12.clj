@@ -2,7 +2,7 @@
   (:require [advent-2021.utils :as u]
             [clojure.string :as str]))
 
-(def lines (u/read-lines "resources/day12-smallest.txt"))
+(def lines (u/read-lines "resources/day12.txt"))
 
 (def lower-case? (complement u/uppercase?))
 
@@ -13,8 +13,6 @@
            {a [b], b [a]})))
 
 (defn small-cave? [node] (lower-case? node))
-
-(def graph (parse-graph lines))
 
 (defn dfs-paths [graph goal path allowances]
   (let [curr (peek path)]
@@ -31,3 +29,11 @@
   (let [graph (parse-graph lines)
         allowances (make-allowances graph)]
     (count (dfs-paths graph "end" ["start"] allowances))))
+
+(defn part2 []
+  (let [allowance (make-allowances graph)
+        small-caves (remove #{"start" "end"} (filter small-cave? (keys graph)))]
+    (->> (map #(update allowance % inc) small-caves)
+         (mapcat #(dfs-paths graph "end" ["start"] %))
+         (set)
+         (count))))
