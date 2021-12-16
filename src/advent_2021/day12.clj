@@ -11,37 +11,45 @@
 (defn build-nodes []
   (mapv parse-item lines))
 
-(defn find-nodes-from [nodes node]
-  (filter (fn [[a _]] (= node a)) nodes))
+(defn find-nodes-from [nodes [f t :as node]]
+  (let [filtered (filter (fn [[a _]] (= a t)) nodes)]
+    (if (and (empty? filtered)
+             (u/uppercase? (str f)))
+      [(vec (reverse node))]
+      filtered)))
 
-(defn find-nodes-to [nodes node]
-  (filter (fn [[_ b]] (= node b)) nodes))
+;(defn find-nodes-to [nodes node]
+;  (filter (fn [[_ b]] (= node b)) nodes))
 
-(defn find-start [nodes] (find-nodes-from nodes :start))
-(defn find-end [nodes] (find-nodes-to nodes :end))
+;(find-nodes-from nodes [:A :c])
+
+(defn find-start [nodes] (find-nodes-from nodes [nil :start]))
+;(defn find-end [nodes] (find-nodes-to nodes [:end]))
 
 (defn multi-pass? [node]
   (->> (str node) (#(= (str/upper-case %) %))))
 
 (def nodes (build-nodes))
 
-(find-nodes-from nodes :start)
+(defn has-walked? [walked node]
+  (contains? (into #{} walked) node))
 
 (defn walk [nodes from walked]
-  (reduce (fn [w [f t]]
-            (conj w [f t]))
-          walked
-          (find-nodes-from nodes from)))
+  ;(loop [nodes nodes
+  ;       from from
+  ;       walked walked]
+    (let [ns (find-nodes-from nodes from)
+          filtered (remove (partial has-walked? walked) ns)
+          n (first filtered)]
+      (cond
+        (not n) walked
+        (= :end (second n)) (conj walked n)
+        :else (recur nodes n (conj walked n)))))
 
 (defn start [nodes]
-  (walk nodes :start #{}))
-
-(find-nodes-from nodes :A)
-
-nodes
-
-(filter multi-pass? nodes)
+  (walk nodes [nil :start] []))
 
 (comment
+  (filter multi-pass? nodes)
   (find-end nodes)
   (find-start nodes))
