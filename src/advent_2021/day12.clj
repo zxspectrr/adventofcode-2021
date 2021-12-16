@@ -4,52 +4,30 @@
 
 (def lines (u/read-lines "resources/day12-smallest.txt"))
 
-(defn parse-item [item]
-  (->> (str/split item #"-")
-       (mapv keyword)))
+(def lower-case? (complement u/uppercase?))
 
-(defn build-nodes []
-  (mapv parse-item lines))
+(defn parse-graph [lines]
+  (apply merge-with into
+         (for [line lines
+               :let [[a b] (str/split line #"-")]]
+           {a [b], b [a]})))
 
-(defn find-nodes-from [nodes [f t :as node]]
-  (let [filtered (filter (fn [[a _]] (= a t)) nodes)]
-    (if (and (empty? filtered)
-             (u/uppercase? (str f)))
-      [(vec (reverse node))]
-      filtered)))
+(defn small-cave? [node] (lower-case? node))
 
-;(defn find-nodes-to [nodes node]
-;  (filter (fn [[_ b]] (= node b)) nodes))
+(def graph (parse-graph lines))
 
-;(find-nodes-from nodes [:A :c])
+(defn dfs-paths [graph goal path allowances]
+  (let [curr (peek path)]
+    (if (= goal curr)
+      (vector path)
+      (let [nexts (filter #(pos? (get allowances %)) (get graph curr))]
+        (mapcat #(dfs-paths graph goal (conj path %) (update allowances curr dec)) nexts)))))
 
-(defn find-start [nodes] (find-nodes-from nodes [nil :start]))
-;(defn find-end [nodes] (find-nodes-to nodes [:end]))
+(defn make-allowances [graph]
+  (let [{small true, big false} (group-by small-cave? (keys graph))]
+    (merge (zipmap small (repeat 1)) (zipmap big (repeat ##Inf)))))
 
-(defn multi-pass? [node]
-  (->> (str node) (#(= (str/upper-case %) %))))
-
-(def nodes (build-nodes))
-
-(defn has-walked? [walked node]
-  (contains? (into #{} walked) node))
-
-(defn walk [nodes from walked]
-  ;(loop [nodes nodes
-  ;       from from
-  ;       walked walked]
-    (let [ns (find-nodes-from nodes from)
-          filtered (remove (partial has-walked? walked) ns)
-          n (first filtered)]
-      (cond
-        (not n) walked
-        (= :end (second n)) (conj walked n)
-        :else (recur nodes n (conj walked n)))))
-
-(defn start [nodes]
-  (walk nodes [nil :start] []))
-
-(comment
-  (filter multi-pass? nodes)
-  (find-end nodes)
-  (find-start nodes))
+(defn part1 []
+  (let [graph (parse-graph lines)
+        allowances (make-allowances graph)]
+    (count (dfs-paths graph "end" ["start"] allowances))))
