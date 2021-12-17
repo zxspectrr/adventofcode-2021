@@ -1,8 +1,9 @@
 (ns advent-2021.day14
   (:require [advent-2021.utils :as u]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [clojure.set :as set]))
 
-(def lines (u/read-lines "resources/day14/small.txt"))
+(def lines (u/read-lines "resources/day14/input.txt"))
 
 (defn get-template []
   (->> (apply vector (first lines))
@@ -33,8 +34,21 @@
                (partition 2 1 template))
        (flatten)))
 
-(->> (take 11 (iterate step (get-template)))
-     (last)
-     (count))
+(defn score [sequence]
+  (let [freqs (frequencies sequence)
+        max-val (reduce max (vals freqs))
+        min-val (reduce min (vals freqs))]
+    (- max-val min-val)))
+
+(defn part1 []
+  (->> (take 11 (iterate step (get-template)))
+       (last)
+       (score)))
+
+(defn part2 []
+  (->> (take 41 (iterate step (get-template)))
+       (last)
+       (score)))
+
 
 
