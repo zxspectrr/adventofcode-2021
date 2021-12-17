@@ -5,52 +5,55 @@
 
 (def lines (u/read-lines "resources/day14/small.txt"))
 
+(def input (slurp "resources/day14/small.txt"))
+
+(defn parse-input []
+  {:polymer (re-find #"^\w+" input)
+   :insertion (->> (for [[_ [a b] [c]] (re-seq #"(\w\w) -> (\w)" input)]
+                     [[a b] [a c b]])
+                   (into {}))})
+
+(def rule-map (:insertion (parse-input)))
+(def template (:polymer (parse-input)))
+
 (defn get-template []
   (->> (apply vector (first lines))))
        ;(map str)))
 
-(def rule-map
-  (->> (split-with #(not (= "" %)) lines)
-       (second)
-       (rest)
-       (map #(str/split % #" -> "))
-       (map (fn [[a b]] {(apply vector a) (first (apply vector b))}))
-       (apply merge-with into)))
+;(def rule-map
+;  (->> (split-with #(not (= "" %)) lines)
+;       (second)
+;       (rest)
+;       (map #(str/split % #" -> "))
+;       (map (fn [[a b]] {(apply vector a) (first (apply vector b))}))
+;       (apply merge-with into)))
 
-(defn get-element [char-arr]
-  (get rule-map char-arr))
+(def polymer template)
+(def insertion rule-map)
 
-(defn add-middle-element [[first second :as char-arr]]
-  (->> (get-element char-arr)
-       ((fn [element] [first element second]))))
+(def counts
+  (memoize
+    (fn [insertion polymer steps]
+      (letfn [(into-counts [result polymer]
+                (merge-with +
+                            (update result (first polymer) (fnil dec 1))
+                            (counts insertion polymer (dec steps))))]
 
-(defn process-char-pair [results char-pair]
-  (let [updated (add-middle-element char-pair)
-        result (if (empty? results) updated
-                                    (rest updated))]
-    (into results result)))
+        (if (zero? steps)
+          (frequencies polymer)
+          (->> (partition 2 1 polymer)
+               (map insertion)
+               (reduce into-counts {})))))))
 
-(defn step [template]
-  (->> (reduce process-char-pair []
-               (partition 2 1 template))))
-       ;(flatten)))
+(counts rule-map (get-template) 2)
 
-(defn score [sequence]
-  (let [freqs (frequencies sequence)
-        max-val (reduce max (vals freqs))
-        min-val (reduce min (vals freqs))]
-    (- max-val min-val)))
+(defn checksum [counts]
+  (apply - (apply (juxt max min) (vals counts))))
 
+(defn solution [steps]
+    (checksum (counts rule-map (get-template) steps)))
 
-(defn part1 []
-  (->> (take 11 (iterate step (get-template)))
-       (last)
-       (score)))
-
-(defn part2 []
-  (->> (take 41 (iterate step (get-template)))
-       (last)
-       (score)))
+(solution 2)
 
 
 

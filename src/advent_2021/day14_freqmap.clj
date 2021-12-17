@@ -41,16 +41,16 @@
 (defn update-add [m k n] (update m k #(+ (or % 0) n)))
 
 (defn apply-rules [rules freqs]
-  (reduce (fn [acc [[a b :as word] n]] (let [c (rules word)]
+  (reduce (fn [acc [[a b :as word] n]] (let [c (rules word)
+                                             safe-add #(+ (or % 0) n)]
                                          (-> acc
-                                             (update-add (str a c) n)
-                                             (update-add (str c b) n))))
+                                             (update (str a c) safe-add)
+                                             (update (str c b) safe-add))))
+
           {} freqs))
 
 (defn score [initial-template freqs]
-  (println freqs)
   (let [char-freqs (reduce (fn [acc [[a] n]]
-                             (println acc a n)
                              (update-add acc a n))
                            {(last initial-template) 1}
                            freqs)]
@@ -63,14 +63,39 @@
                            (partition 2 1)
                            (map (partial apply str))
                            frequencies)]
-    (->> (iterate (partial apply-rules template-map) initial-freqs)
+    (->> initial-freqs
+         (iterate (partial apply-rules template-map))
          (drop step)
-         first
-         (score template))))
+         (first)))
+         ;(score template))))
 
-(solve 40)
+ (partition 2 1 template))
+
+(def initial-freqs (->> template
+                        (partition 2 1)
+                        (map (partial apply str))
+                        frequencies))
+
+(score template (->> (apply-rules template-map initial-freqs)
+                     (apply-rules template-map)
+                     (apply-rules template-map)
+                     (apply-rules template-map)
+                     (apply-rules template-map)
+                     (apply-rules template-map)
+                     (apply-rules template-map)
+                     (apply-rules template-map)
+                     (apply-rules template-map)
+                     (apply-rules template-map)))
+
 
 (comment
+
+  (->> (first [1]) (first) (first) (first))
+
+  (get [1 2 3] 1)
+
+  (test)
+
 
   (defn part1 []
     (->> (take 11 (iterate step (get-template)))
