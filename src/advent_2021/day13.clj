@@ -20,6 +20,7 @@
 (def folds
   (->> (rest (second instructions))
        (map parse-fold)))
+
 (def points
   (->> (map parse-point (first instructions)) (set)))
 
@@ -43,7 +44,30 @@
         folded (map #(fold-point % fold) to-fold)]
      (into filtered-points folded)))
 
+(defn max-val [axis points]
+  (reduce max (map #(get % (get fold-axis-map axis)) points)))
+
+(defn build-2d-vector [x y]
+  (vec (repeat y (vec (repeat x ".")))))
+
+(defn add-point-to-grid [grid [x y]]
+  (assoc-in grid [y x] "#"))
+
+(defn print-grid [grid]
+  (doseq [line grid]
+    (println line)))
+
+(defn display-points [points]
+  (let [max-x (inc (max-val "x" points))
+        max-y (inc (max-val "y" points))
+        grid (build-2d-vector max-x max-y)]
+    (->> (reduce add-point-to-grid grid points)
+         (print-grid))))
+
 (defn part1 []
   (->> (apply-fold points (first folds))
        (count)))
 
+(defn part2 []
+  (->> (reduce apply-fold points folds)
+       (display-points)))
