@@ -4,7 +4,9 @@
 
 (def lines (u/read-lines "resources/day14/small.txt"))
 
-(def template (apply vector (first lines)))
+(defn get-template []
+  (->> (apply vector (first lines))
+       (map str)))
 
 (def rule-map
   (->> (split-with #(not (= "" %)) lines)
@@ -16,5 +18,23 @@
 (defn get-element [char-arr]
   (get rule-map (reduce str char-arr)))
 
-(get-element (first (partition 2 1 "NNCB")))
+(defn add-middle-element [[first second :as char-arr]]
+  (->> (get-element char-arr)
+       ((fn [element] [first element second]))))
+
+(defn process-char-pair [results char-pair]
+  (let [updated (add-middle-element char-pair)
+        result (if (empty? results) updated
+                                    (rest updated))]
+    (conj results result)))
+
+(defn step [template]
+  (->> (reduce process-char-pair []
+               (partition 2 1 template))
+       (flatten)))
+
+(->> (take 11 (iterate step (get-template)))
+     (last)
+     (count))
+
 
