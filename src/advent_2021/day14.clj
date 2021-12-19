@@ -1,59 +1,59 @@
-(ns advent-2021.day14
+(ns advent-2021.day14-new
   (:require [advent-2021.utils :as u]
-            [clojure.string :as str]
-            [clojure.set :as set]))
+            [clojure.string :as str]))
 
-(def lines (u/read-lines "resources/day14/small.txt"))
+(def input (->> (slurp "resources/day14/input.txt")
+                (str/split-lines)))
 
-(def input (slurp "resources/day14/small.txt"))
+(def template (first input))
 
-(defn parse-input []
-  {:polymer (re-find #"^\w+" input)
-   :insertion (->> (for [[_ [a b] [c]] (re-seq #"(\w\w) -> (\w)" input)]
-                     [[a b] [a c b]])
-                   (into {}))})
+(def template-map (->> (rest input)
+                       (rest)
+                       (map #(str/split % #" -> "))
+                       (map (fn [[a b]] {a b}))
+                       (apply merge-with into)))
 
-(def rule-map (:insertion (parse-input)))
-(def template (:polymer (parse-input)))
+(defn get-val [string-pair]
+  (->> (apply str string-pair)
+       (get template-map)
+       (char-array)
+       (first)))
 
-(defn get-template []
-  (->> (apply vector (first lines))))
-       ;(map str)))
+(defn safe-add [existing-value to-add]
+  (+ (or existing-value 0) to-add))
 
-;(def rule-map
-;  (->> (split-with #(not (= "" %)) lines)
-;       (second)
-;       (rest)
-;       (map #(str/split % #" -> "))
-;       (map (fn [[a b]] {(apply vector a) (first (apply vector b))}))
-;       (apply merge-with into)))
+(defn step [initial-freq]
+  (reduce (fn [acc [[a b] v]]
+            (let [c (get-val [a b])]
+              (-> acc
+                  (update [a c] #(safe-add % v))
+                  (update [c b] #(safe-add % v)))))
+          {}
+          initial-freq))
 
-(def polymer template)
-(def insertion rule-map)
+(defn letter-freqs [template freq-map]
+  (reduce (fn [acc [[a b] v]]
+            (update acc a #(safe-add % v)))
+          {(last template) 1}
+          freq-map))
 
-(def counts
-  (memoize
-    (fn [insertion polymer steps]
-      (letfn [(into-counts [result polymer]
-                (merge-with +
-                            (update result (first polymer) (fnil dec 1))
-                            (counts insertion polymer (dec steps))))]
+(defn score [letter-freqs]
+  (let [vals (sort (vals letter-freqs))
+        min (reduce min vals)
+        max (reduce max vals)]
+    (- max min)))
 
-        (if (zero? steps)
-          (frequencies polymer)
-          (->> (partition 2 1 polymer)
-               (map insertion)
-               (reduce into-counts {})))))))
+(defn do-score [steps]
+  (->> (partition 2 1 template)
+       (frequencies)
+       (iterate step)
+       (drop steps)
+       (first)
+       (letter-freqs template)
+       (score)))
 
-(counts rule-map (get-template) 2)
+(defn part1 []
+  (do-score 10))
 
-(defn checksum [counts]
-  (apply - (apply (juxt max min) (vals counts))))
-
-(defn solution [steps]
-    (checksum (counts rule-map (get-template) steps)))
-
-(solution 2)
-
-
-
+(defn part2 []
+  (do-score 40))
