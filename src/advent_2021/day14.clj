@@ -1,8 +1,7 @@
-(ns advent-2021.day14-new
-  (:require [advent-2021.utils :as u]
-            [clojure.string :as str]))
+(ns advent-2021.day14
+  (:require [clojure.string :as str]))
 
-(def input (->> (slurp "resources/day14/input.txt")
+(def input (->> (slurp "resources/day14/small.txt")
                 (str/split-lines)))
 
 (def template (first input))
@@ -38,10 +37,10 @@
           freq-map))
 
 (defn score [letter-freqs]
-  (let [vals (sort (vals letter-freqs))
-        min (reduce min vals)
-        max (reduce max vals)]
-    (- max min)))
+  (->> (vals letter-freqs)
+       (sort)
+       ((juxt last first))
+       (apply -)))
 
 (defn do-score [steps]
   (->> (partition 2 1 template)
