@@ -25,7 +25,9 @@
              "E"  "1110"
              "F"  "1111"})
 
-(def binary-map (set/map-invert hexmap))
+(defn is-literal? [type-id]
+  (= 4 type-id))
+
 (defn binary-to-number [binary]
   (Integer/parseInt binary 2))
 
