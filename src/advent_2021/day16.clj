@@ -48,7 +48,7 @@
         updated-chunks
         (recur updated-chunks (rest potential-chunks))))))
 
-(defn handle-literal [binary]
+(defn parse-literal [binary]
   (let [literal-chunks (extract-chunks (partition 5 binary))
         flattened-chunks (flatten literal-chunks)
         literal-binary (apply str flattened-chunks)
@@ -63,7 +63,7 @@
         type (binary-to-number type-bits)]
     {:version version
      :type    type
-     :literal (handle-literal (subs binary 6))}))
+     :literal (parse-literal (subs binary 6))}))
 
 (defn part1 []
   (->> (hex-to-binary hex)
@@ -73,3 +73,5 @@
 (defn split-packets [binary])
 
 (hex-to-binary hex)
+
+(count "101111111000101000")
