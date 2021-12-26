@@ -135,16 +135,16 @@
               (= first last) 1
               :else 0))))
 
-(defn create-reducers [packet]
+(defn calculate-values [packet]
   (let [{:keys [type-id value packets]} packet]
     (if (= type-id :literal)
       value
       (let [op (get-operator packet)
-            args (reduce (fn [acc p] (conj acc (create-reducers p)))
+            args (reduce (fn [acc p] (conj acc (calculate-values p)))
                          []
                          packets)]
         (apply op args)))))
 
 (defn part2 []
   (->> (parse-hex hex)
-       (create-reducers)))
+       (calculate-values)))
