@@ -73,25 +73,26 @@
 (defn get-packets [binary]
   (loop [binary binary
          packets []]
-    (let [packet (parse-packet binary)
-          {:keys [remainder]} packet
-          result (conj packets packet)]
-      (if (not remainder)
-        result
-        (recur remainder result)))))
+    (let [packet (parse-packet binary)]
+      (if (not packet)
+        packets
+        (recur (:remainder packet) (conj packets packet))))))
 
 (comment
   (get-packets "00000000000000000101100001000101010110001011001000100000000010000100011000111000110100")
   true)
 
+
 (defn parse-packet [binary]
   (letfn [(is-literal? [type-id] (= 4 type-id))
-
+          (invalid-input? [binary] (< (count (frequencies binary)) 2))
+          (valid-input? [binary] (not (invalid-input? binary)))
           (handle-15-bit [binary]
             (let [length-bits (subs binary 7 22)
                   sub-packet-length (Integer/parseInt length-bits 2)
                   packet-binary (subs binary 22 (+ 22 sub-packet-length))]
               {:packets (get-packets packet-binary)
+               :operator-type :15-bit
                :remainder (subs binary (+ 22 sub-packet-length))}))
 
           (handle-11-bit [binary]
@@ -103,7 +104,8 @@
                   ;                   (partition 11 packet-string)
                   ;                   (vector (vec packet-string)))
                   ;packets-as-binary (map #(apply str %) packets-as-chars)]
-              {:packets packets}))
+              {:packets packets
+               :operator-type :11-bit}))
 
           (parse-operator [binary]
             (let [length-type (get binary 6)
@@ -112,16 +114,17 @@
                 (handle-15-bit binary)
                 (handle-11-bit binary))))]
 
-    (let [header (parse-packet-header binary)
-          {:keys [type]} header]
+    (when (valid-input? binary)
+      (let [header (parse-packet-header binary)
+            {:keys [type]} header]
 
-      (if (is-literal? type)
-        (merge header (parse-literal binary))
-        (merge header (parse-operator binary))))))
+        (if (is-literal? type)
+          (merge header (parse-literal binary))
+          (merge header (parse-operator binary)))))))
 
 
 (defn part1 []
-  (->> (hex-to-binary "620080001611562C8802118E34")
+  (->> (hex-to-binary "8A004A801A8002F478")
        (parse-packet))
 
 
