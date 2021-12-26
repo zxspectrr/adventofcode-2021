@@ -31,7 +31,8 @@
         type-bits (subs binary 3 6)
         type (binary-to-number type-bits)]
     {:version version
-     :type type}))
+     :type type
+     :binary binary}))
 
 (declare parse-packet)
 
@@ -46,13 +47,14 @@
      :value   (binary-to-number literal-binary)
      :remainder (when (not= "" remainder) remainder)}))
 
-(defn get-packets [binary]
+(defn get-packets [binary index max]
   (loop [binary binary
-         packets []]
+         packets []
+         index index]
     (let [packet (parse-packet binary)]
-      (if (not packet)
+      (if (or (not packet) (= index max))
         packets
-        (recur (:remainder packet) (conj packets packet))))))
+        (recur (:remainder packet) (conj packets packet) (inc index))))))
 
 (defn parse-operator [binary]
   (letfn [(handle-15-bit [binary]
@@ -60,14 +62,18 @@
                   sub-packet-length (binary-to-number length-bits)
                   packet-binary (subs binary 22 (+ 22 sub-packet-length))]
               {:type-id :15-bit
-               :packets (get-packets packet-binary)
+               :packets (get-packets packet-binary 0 nil)
                :remainder (subs binary (+ 22 sub-packet-length))}))
 
           (handle-11-bit [binary]
-            (let [packet-string (subs binary 18)
-                  packets (get-packets packet-string)]
+            (let [length-bits (subs binary 7 18)
+                  packet-count (binary-to-number length-bits)
+                  packet-string (subs binary 18)
+                  packets (get-packets packet-string 0 packet-count)
+                  remainder (->> (last packets) (:remainder))]
               {:type-id :11-bit
-               :packets packets}))]
+               :packets packets
+               :remainder remainder}))]
 
     (let [length-type (get binary 6)
           fifteen-bit-length (= \0 length-type)]
@@ -87,6 +93,7 @@
           (merge header (parse-operator binary)))))))
 
 (defn get-operator [{:keys [type]}]
+  (println "type id" type)
   (case type
     0 (fn [total value]
         (if (nil? total) value
@@ -115,9 +122,7 @@
     7 (fn [total value]
         (cond (nil? total) 0
               (= total value) 1
-              :else 0))
-
-    (fn [total value] total)))
+              :else 0))))
 
 (defn combine-packet
   ([packet]
@@ -125,17 +130,23 @@
 
   ([packet running-total parent-operator]
    (let [{:keys [type-id value packets]} packet]
-        (if (= type-id :literal)
-          (parent-operator running-total value)
-          (reduce (fn [total p]
-                    (combine-packet p total (get-operator packet)))
-                  nil
-                  packets)))))
+     (if (= type-id :literal)
+       (parent-operator running-total value)
+       (->>
+         (reduce (fn [total p]
+                   (combine-packet p total (get-operator packet)))
+                 nil
+                 packets)
+         (reduce parent-operator))))))
 
 (defn part2 []
-  (->> (parse-hex "C200B40A82")
+  (->> (parse-hex "9C0141080250320F1802104A08")
        (combine-packet))
- (comment))
+ (comment
+   (parse-packet "1100011000000000100001000001001010000010")
+   ,))
+
+
 
 (defn flatten-packets [packet]
   (let [{:keys [packets]} packet
