@@ -11,22 +11,6 @@
 (defn hex-to-binary [hex]
   (->> (map get-for-hex-char hex) (apply str)))
 
-(defn take-bits [bits length]
-  [(subs bits 0 length) (subs bits length)])
-
-(defn parse-bits [bits length]
-  (let [[a bits] (take-bits bits length)]
-    [(Long/parseLong a 2) bits]))
-
-(declare parse-packet)
-
-(defn parse-header [binary]
-  (let [[version bits] (parse-bits binary 3)
-        [type _] (parse-bits bits 3)]
-    {:version version
-     :type    type
-     :binary  binary}))
-
 (defn extract-chunks [potential-chunks]
   (loop [chunks []
          potential-chunks potential-chunks]
@@ -37,19 +21,27 @@
         updated-chunks
         (recur updated-chunks (rest potential-chunks))))))
 
+(declare parse-packet)
+
+(defn parse-header [binary]
+  (let [version-bits (subs binary 0 3)
+        version (binary-to-number version-bits)
+        type-bits (subs binary 3 6)
+        type (binary-to-number type-bits)]
+    {:version version
+     :type type
+     :binary binary}))
+
 (defn parse-literal [binary]
-  (let [literal-chunks (extract-chunks (partition 5 binary))
+  (let [substr (subs binary 6)
+        literal-chunks (extract-chunks (partition 5 substr))
         flattened-chunks (flatten literal-chunks)
         literal-binary (apply str flattened-chunks)
-        bit-length (* 5 (count literal-chunks))
-        [_ remainder] (take-bits binary bit-length)]
+        bit-length (+ 6 (* 5 (count literal-chunks)))
+        remainder (subs binary bit-length)]
     {:type-id :literal
      :value   (binary-to-number literal-binary)
      :remainder (when (not= "" remainder) remainder)}))
-
-(comment
-  (parse-packet "110100101111111000101000")
-  ,)
 
 (defn get-packets
   ([binary max]
@@ -65,37 +57,39 @@
 
 (defn parse-operator [binary]
   (letfn [(handle-15-bit [binary]
-            (let [[packet-length bits] (parse-bits binary 15)
-                  packets (get-packets bits nil)
-                  [_ remainder] (take-bits bits packet-length)]
+            (let [length-bits (subs binary 7 22)
+                  sub-packet-length (binary-to-number length-bits)
+                  packet-binary (subs binary 22 (+ 22 sub-packet-length))]
               {:type-id :15-bit
-               :packets packets
-               :remainder remainder}))
+               :packets (get-packets packet-binary nil)
+               :remainder (subs binary (+ 22 sub-packet-length))}))
 
           (handle-11-bit [binary]
-            (let [[packet-count packet-string] (parse-bits binary 11)
+            (let [length-bits (subs binary 7 18)
+                  packet-count (binary-to-number length-bits)
+                  packet-string (subs binary 18)
                   packets (get-packets packet-string packet-count)
                   remainder (->> (last packets) (:remainder))]
               {:type-id :11-bit
                :packets packets
                :remainder remainder}))]
 
-    (let [[length-type bits] (parse-bits binary 1)
-          fifteen-bit-length (= 0 length-type)]
+    (let [length-type (get binary 6)
+          fifteen-bit-length (= \0 length-type)]
       (if fifteen-bit-length
-        (handle-15-bit bits)
-        (handle-11-bit bits)))))
+        (handle-15-bit binary)
+        (handle-11-bit binary)))))
 
 (defn parse-packet [binary]
   (letfn [(valid-input? [binary] (> (count (frequencies binary)) 1))]
 
     (when (valid-input? binary)
       (let [header (parse-header binary)
-            {:keys [type]} header
-            [_ body] (take-bits binary 6)]
+            {:keys [type]} header]
+
         (if (= type 4)
-          (merge header (parse-literal body))
-          (merge header (parse-operator body)))))))
+          (merge header (parse-literal binary))
+          (merge header (parse-operator binary)))))))
 
 (defn flatten-packets [packet]
   (let [{:keys [packets]} packet
@@ -115,7 +109,7 @@
        (parse-packet)))
 
 (defn part1 []
-  (->> (parse-hex "620080001611562C8802118E34")
+  (->> (parse-hex hex)
        (flatten-packets)
        (map :version)
        (reduce +)))
@@ -152,5 +146,5 @@
         (apply op args)))))
 
 (defn part2 []
-  (->> (parse-hex "C200B40A82")
+  (->> (parse-hex hex)
        (calculate-values)))
