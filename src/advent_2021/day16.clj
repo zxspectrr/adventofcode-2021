@@ -70,23 +70,19 @@
      :packets   (get-packets packet-binary nil)
      :remainder remainder}))
 
-(comment
-  (parse-hex "D2FE28")
-
-  (->> (parse-hex hex)
-       (calculate-values))
-
-  ,)
-
 (defn parse-count-operator [binary]
-  (let [length-bits (subs binary 7 18)
-        packet-count (binary-to-number length-bits)
-        packet-string (subs binary 18)
+  (let [[_ bits] (take-bits binary 7)
+        [packet-count packet-string] (parse-bits bits 11)
         packets (get-packets packet-string packet-count)
         remainder (->> (last packets) (:remainder))]
-    {:type-id :11-bit
-     :packets packets
+    {:type-id   :11-bit
+     :packets   packets
      :remainder remainder}))
+
+(comment
+  (->> (parse-hex hex)
+       (calculate-values))
+  ,)
 
 (defn parse-operator [binary]
   (let [length-type (get binary 6)
