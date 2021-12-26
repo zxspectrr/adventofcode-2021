@@ -18,34 +18,7 @@
   (let [[a bits] (take-bits bits length)]
     [(Long/parseLong a 2) bits]))
 
-(defn extract-chunks [potential-chunks]
-  (loop [chunks []
-         potential-chunks potential-chunks]
-    (let [chunk (first potential-chunks)
-          prefix (first chunk)
-          updated-chunks (conj chunks (rest chunk))]
-      (if (= \0 prefix)
-        updated-chunks
-        (recur updated-chunks (rest potential-chunks))))))
-
 (declare parse-packet)
-
-(defn parse-header [binary]
-  (let [[version bits] (parse-bits binary 3)
-        [type _] (parse-bits bits 3)]
-    {:version version
-     :type type
-     :binary binary}))
-
-(defn parse-literal [binary]
-  (let [literal-chunks (extract-chunks (partition 5 binary))
-        flattened-chunks (flatten literal-chunks)
-        literal-binary (apply str flattened-chunks)
-        bit-length (* 5 (count literal-chunks))
-        [_ remainder] (take-bits binary bit-length)]
-    {:type-id :literal
-     :value   (binary-to-number literal-binary)
-     :remainder remainder}))
 
 (defn get-packets
   ([binary max]
@@ -82,6 +55,33 @@
     (if fifteen-bit-length
       (parse-length-operator body)
       (parse-count-operator body))))
+
+(defn extract-chunks [potential-chunks]
+  (loop [chunks []
+         potential-chunks potential-chunks]
+    (let [chunk (first potential-chunks)
+          prefix (first chunk)
+          updated-chunks (conj chunks (rest chunk))]
+      (if (= \0 prefix)
+        updated-chunks
+        (recur updated-chunks (rest potential-chunks))))))
+
+(defn parse-literal [binary]
+  (let [literal-chunks (extract-chunks (partition 5 binary))
+        flattened-chunks (flatten literal-chunks)
+        literal-binary (apply str flattened-chunks)
+        bit-length (* 5 (count literal-chunks))
+        [_ remainder] (take-bits binary bit-length)]
+    {:type-id   :literal
+     :value     (binary-to-number literal-binary)
+     :remainder remainder}))
+
+(defn parse-header [binary]
+  (let [[version bits] (parse-bits binary 3)
+        [type _] (parse-bits bits 3)]
+    {:version version
+     :type    type
+     :binary  binary}))
 
 (defn parse-packet [binary]
   (letfn [(valid-input? [binary] (get (frequencies binary) \1))]
