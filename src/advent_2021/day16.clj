@@ -79,11 +79,6 @@
      :packets   packets
      :remainder remainder}))
 
-(comment
-  (->> (parse-hex hex)
-       (calculate-values))
-  ,)
-
 (defn parse-operator [binary]
   (let [length-type (get binary 6)
         fifteen-bit-length (= \0 length-type)]
@@ -92,12 +87,11 @@
       (parse-count-operator binary))))
 
 (defn parse-packet [binary]
-  (letfn [(valid-input? [binary] (> (count (frequencies binary)) 1))]
+  (letfn [(valid-input? [binary] (get (frequencies binary) \1))]
 
     (when (valid-input? binary)
       (let [header (parse-header binary)
             {:keys [type]} header]
-
         (if (= type 4)
           (merge header (parse-literal binary))
           (merge header (parse-operator binary)))))))
