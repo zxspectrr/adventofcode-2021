@@ -22,8 +22,6 @@
              "E"  "1110"
              "F"  "1111"})
 
-(defn is-literal? [type-id] (= 4 type-id))
-
 (defn binary-to-number [binary] (Integer/parseInt binary 2))
 
 (defn get-for-hex-char [char] (get hexmap (str char)))
@@ -79,7 +77,9 @@
         (recur remainder result)))))
 
 (defn parse-packet [binary]
-  (letfn [(handle-15-bit [binary]
+  (letfn [(is-literal? [type-id] (= 4 type-id))
+
+          (handle-15-bit [binary]
             (let [length-bits (subs binary 7 22)
                   sub-packet-length (Integer/parseInt length-bits 2)
                   packet-binary (subs binary 22 (+ 22 sub-packet-length))]
@@ -88,14 +88,15 @@
           (handle-11-bit [binary]
             (let [length-bits (subs binary 7 18)
                   packet-count (Integer/parseInt length-bits 2)
-                  subs-end (+ 18 (* 11 packet-count))
-                  packet-string (subs binary 18 subs-end)
-                  packets-as-chars (partition 11 packet-string)
+                  packet-string (subs binary 18)
+                  packets-as-chars (if (> packet-count 1)
+                                     (partition 11 packet-string)
+                                     (vector (vec packet-string)))
                   packets-as-binary (map #(apply str %) packets-as-chars)]
               {:packets (map parse-packet packets-as-binary)}))
 
           (parse-operator [binary]
-            (let [length-type (get binary 5)
+            (let [length-type (get binary 6)
                   fifteen-bit-length (= \0 length-type)]
               (if fifteen-bit-length
                 (handle-15-bit binary)
