@@ -11,6 +11,13 @@
 (defn hex-to-binary [hex]
   (->> (map get-for-hex-char hex) (apply str)))
 
+(defn take-bits [bits length]
+  [(subs bits 0 length) (subs bits length)])
+
+(defn parse-bits [bits length]
+  (let [[a bits] (take-bits bits length)]
+    [(Long/parseLong a 2) bits]))
+
 (defn extract-chunks [potential-chunks]
   (loop [chunks []
          potential-chunks potential-chunks]
