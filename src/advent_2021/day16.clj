@@ -5,32 +5,15 @@
 
 (def hex (slurp "resources/day16/input.txt"))
 
-(def hexmap {"0"  "0000"
-             "1"  "0001"
-             "2"  "0010"
-             "3"  "0011"
-             "4"  "0100"
-             "5"  "0101"
-             "6"  "0110"
-             "7"  "0111"
-             "8"  "1000"
-             "9"  "1001"
-             "A"  "1010"
-             "B"  "1011"
-             "C"  "1100"
-             "D"  "1101"
-             "E"  "1110"
-             "F"  "1111"})
+(def hexmap {"0"  "0000", "1"  "0001", "2"  "0010", "3"  "0011", "4"  "0100", "5"  "0101", "6"  "0110", "7"  "0111"
+             "8"  "1000", "9"  "1001", "A"  "1010", "B"  "1011", "C"  "1100", "D"  "1101", "E"  "1110", "F"  "1111"})
 
 (defn binary-to-number [binary] (Long/parseLong  binary 2))
 
 (defn get-for-hex-char [char] (get hexmap (str char)))
 
 (defn hex-to-binary [hex]
-  (->> (map get-for-hex-char hex)
-       (apply str)))
-
-(def binary (hex-to-binary hex))
+  (->> (map get-for-hex-char hex) (apply str)))
 
 (defn extract-chunks [potential-chunks]
   (loop [chunks []
@@ -42,13 +25,14 @@
         updated-chunks
         (recur updated-chunks (rest potential-chunks))))))
 
-(defn parse-packet-header [binary]
+(defn parse-header [binary]
   (let [version-bits (subs binary 0 3)
         version (binary-to-number version-bits)
         type-bits (subs binary 3 6)
         type (binary-to-number type-bits)]
-    {:version version :type type}))
-
+    {:version version
+     :type type
+     :binary binary}))
 
 (declare parse-packet)
 
@@ -70,11 +54,8 @@
         packets
         (recur (:remainder packet) (conj packets packet))))))
 
-(defn parse-packet [binary]
-  (letfn [(is-literal? [type-id] (= 4 type-id))
-          (invalid-input? [binary] (< (count (frequencies binary)) 2))
-          (valid-input? [binary] (not (invalid-input? binary)))
-          (handle-15-bit [binary]
+(defn parse-operator [binary]
+  (letfn [(handle-15-bit [binary]
             (let [length-bits (subs binary 7 22)
                   sub-packet-length (binary-to-number length-bits)
                   packet-binary (subs binary 22 (+ 22 sub-packet-length))]
@@ -83,29 +64,25 @@
                :remainder (subs binary (+ 22 sub-packet-length))}))
 
           (handle-11-bit [binary]
-            (let [length-bits (subs binary 7 18)
-                  packet-count (binary-to-number length-bits)
-                  packet-string (subs binary 18)
+            (let [packet-string (subs binary 18)
                   packets (get-packets packet-string)]
-                  ;packets-as-chars (if (> packet-count 1)
-                  ;                   (partition 11 packet-string)
-                  ;                   (vector (vec packet-string)))
-                  ;packets-as-binary (map #(apply str %) packets-as-chars)]
               {:operator-type :11-bit
-               :packets packets}))
+               :packets packets}))]
 
-          (parse-operator [binary]
-            (let [length-type (get binary 6)
-                  fifteen-bit-length (= \0 length-type)]
-              (if fifteen-bit-length
-                (handle-15-bit binary)
-                (handle-11-bit binary))))]
+    (let [length-type (get binary 6)
+          fifteen-bit-length (= \0 length-type)]
+      (if fifteen-bit-length
+        (handle-15-bit binary)
+        (handle-11-bit binary)))))
+
+(defn parse-packet [binary]
+  (letfn [(valid-input? [binary] (> (count (frequencies binary)) 1))]
 
     (when (valid-input? binary)
-      (let [header (parse-packet-header binary)
+      (let [header (parse-header binary)
             {:keys [type]} header]
 
-        (if (is-literal? type)
+        (if (= type 4)
           (merge header (parse-literal binary))
           (merge header (parse-operator binary)))))))
 
@@ -137,12 +114,6 @@
   (def hex "8A004A801A8002F478")
   (def hex "D2FE28")
   (def hex "38006F45291200"))
-
-(comment
-  (parse-packet "1101000101001010010001001000000000")
-  (defn split-packets [binary])
-  (hex-to-binary hex)
-  (count "101111111000101000"))
 
 
 
