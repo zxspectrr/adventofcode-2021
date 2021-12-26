@@ -99,19 +99,55 @@
                      nil
                      packets)})))
 
-(defn get-operator [{:keys [type-id]}]
-  (case type-id
-    0 (fn [total value] (+ total value))
-    (fn [total value] total)))
+(defn get-operator [{:keys [type]}]
+  (case type
+        0 (fn [total value]
+            (if (nil? total) value
+                (+ total value)))
+        1 (fn [total value]
+            (if (nil? total) value
+                             (* total value)))
+        2 (fn [total value]
+            (cond (nil? total) value
+                  (< value total) value
+                  :else total))
+        3 (fn [total value]
+            (cond (nil? total) value
+                  (> value total) value
+                  :else total))
+        5 (fn [total value]
+            (cond (nil? total) 0
+                  (= 1 total) 1
+                  (> total value) 1
+                  :else 0))
 
-(defn combine-packet [packet running-total parent-operator]
-  (let [{:keys [type-id value children]} packet]
-    (if (= type-id :literal)
-      (parent-operator running-total value)
-      (reduce (fn [total p]
-                (combine-packet p total (get-operator type-id)))
-              nil
-              children))))
+        6 (fn [total value]
+            (cond (nil? total) 0
+                  (= 1 total) 1
+                  (> value total) 1
+                  :else 0))
+
+        (fn [total value]
+          total)))
+
+(defn combine-packet
+  ([packet]
+   (combine-packet packet nil nil))
+
+  ([packet running-total parent-operator]
+   (let [{:keys [type-id value packets]} packet]
+     (if (= type-id :literal)
+       (parent-operator running-total value)
+       (reduce (fn [total p]
+                 (combine-packet p total (get-operator packet)))
+               nil
+               packets)))))
+
+(defn part2 []
+  (->> (parse-hex "F600BC2D8F")
+       (combine-packet))
+
+  (comment))
 
 (defn flatten-packets [packet]
   (let [{:keys [packets]} packet
@@ -135,12 +171,6 @@
        (flatten-packets)
        (map :version)
        (reduce +)))
-
-(defn part2 []
-  (->> (parse-hex "C200B40A82")
-       (set-value))
-
-  (comment))
 
 
 
