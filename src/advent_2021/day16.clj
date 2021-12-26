@@ -53,18 +53,22 @@
 (declare parse-packet)
 
 (comment
- (parse-packet "110100010100101001000100100")
- (parse-packet "0101001000100100"))
+ (parse-packet "00000000000000000101100001000101010110001011001000100000000010000100011000111000110100")
+ (parse-packet "100100000100011000001100000")
+
+ (parse-packet "0011000001100000")
+
+ true)
 
 (defn parse-literal [binary]
-               (let [substr (subs binary 6)
-                     literal-chunks (extract-chunks (partition 5 substr))
-                     flattened-chunks (flatten literal-chunks)
-                     literal-binary (apply str flattened-chunks)
-                     bit-length (+ 6 (* 5 (count literal-chunks)))
-                     remainder (subs binary bit-length)]
-                 {:literal   (binary-to-number literal-binary)
-                  :remainder (if (not= "" remainder) remainder)}))
+  (let [substr (subs binary 6)
+        literal-chunks (extract-chunks (partition 5 substr))
+        flattened-chunks (flatten literal-chunks)
+        literal-binary (apply str flattened-chunks)
+        bit-length (+ 6 (* 5 (count literal-chunks)))
+        remainder (subs binary bit-length)]
+    {:literal   (binary-to-number literal-binary)
+     :remainder (when (not= "" remainder) remainder)}))
 
 (defn get-packets [binary]
   (loop [binary binary
@@ -76,6 +80,10 @@
         result
         (recur remainder result)))))
 
+(comment
+  (get-packets "00000000000000000101100001000101010110001011001000100000000010000100011000111000110100")
+  true)
+
 (defn parse-packet [binary]
   (letfn [(is-literal? [type-id] (= 4 type-id))
 
@@ -83,17 +91,19 @@
             (let [length-bits (subs binary 7 22)
                   sub-packet-length (Integer/parseInt length-bits 2)
                   packet-binary (subs binary 22 (+ 22 sub-packet-length))]
-              {:packets (get-packets packet-binary)}))
+              {:packets (get-packets packet-binary)
+               :remainder (subs binary (+ 22 sub-packet-length))}))
 
           (handle-11-bit [binary]
             (let [length-bits (subs binary 7 18)
                   packet-count (Integer/parseInt length-bits 2)
                   packet-string (subs binary 18)
-                  packets-as-chars (if (> packet-count 1)
-                                     (partition 11 packet-string)
-                                     (vector (vec packet-string)))
-                  packets-as-binary (map #(apply str %) packets-as-chars)]
-              {:packets (map parse-packet packets-as-binary)}))
+                  packets (get-packets packet-string)]
+                  ;packets-as-chars (if (> packet-count 1)
+                  ;                   (partition 11 packet-string)
+                  ;                   (vector (vec packet-string)))
+                  ;packets-as-binary (map #(apply str %) packets-as-chars)]
+              {:packets packets}))
 
           (parse-operator [binary]
             (let [length-type (get binary 6)
@@ -111,13 +121,13 @@
 
 
 (defn part1 []
-  (->> (hex-to-binary "EE00D40C823060")
+  (->> (hex-to-binary "620080001611562C8802118E34")
        (parse-packet))
 
 
-  true)
+  true
 
-(def hex "8A004A801A8002F478")
+  (def hex "8A004A801A8002F478"))
 (def hex "D2FE28")
 (def hex "38006F45291200")
 
