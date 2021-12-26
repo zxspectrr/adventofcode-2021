@@ -61,7 +61,7 @@
                 (conj packets packet)
                 (inc index)))))))
 
-(defn parse-length-operator [bit]
+(defn parse-length-operator [bits]
   (let [[sub-packet-length bits] (parse-bits bits 15)
         [packet-binary remainder] (take-bits bits sub-packet-length)]
     {:type-id   :15-bit
