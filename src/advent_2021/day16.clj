@@ -48,10 +48,6 @@
      :value   (binary-to-number literal-binary)
      :remainder remainder}))
 
-(comment
-  (parse-hex "D2FE28")
-  ,)
-
 (defn get-packets
   ([binary max]
    (get-packets binary 0 max))
@@ -66,30 +62,38 @@
                 (conj packets packet)
                 (inc index)))))))
 
+(defn parse-length-operator [binary]
+  (let [[_ bits] (take-bits binary 7)
+        [sub-packet-length bits] (parse-bits bits 15)
+        packet-binary (subs binary 22 (+ 22 sub-packet-length))]
+    {:type-id   :15-bit
+     :packets   (get-packets packet-binary nil)
+     :remainder (subs binary (+ 22 sub-packet-length))}))
+
+(comment
+  (parse-hex "D2FE28")
+
+  (->> (parse-hex hex)
+       (calculate-values))
+
+  ,)
+
+(defn parse-count-operator [binary]
+  (let [length-bits (subs binary 7 18)
+        packet-count (binary-to-number length-bits)
+        packet-string (subs binary 18)
+        packets (get-packets packet-string packet-count)
+        remainder (->> (last packets) (:remainder))]
+    {:type-id :11-bit
+     :packets packets
+     :remainder remainder}))
+
 (defn parse-operator [binary]
-  (letfn [(handle-15-bit [binary]
-            (let [length-bits (subs binary 7 22)
-                  sub-packet-length (binary-to-number length-bits)
-                  packet-binary (subs binary 22 (+ 22 sub-packet-length))]
-              {:type-id :15-bit
-               :packets (get-packets packet-binary nil)
-               :remainder (subs binary (+ 22 sub-packet-length))}))
-
-          (handle-11-bit [binary]
-            (let [length-bits (subs binary 7 18)
-                  packet-count (binary-to-number length-bits)
-                  packet-string (subs binary 18)
-                  packets (get-packets packet-string packet-count)
-                  remainder (->> (last packets) (:remainder))]
-              {:type-id :11-bit
-               :packets packets
-               :remainder remainder}))]
-
-    (let [length-type (get binary 6)
-          fifteen-bit-length (= \0 length-type)]
-      (if fifteen-bit-length
-        (handle-15-bit binary)
-        (handle-11-bit binary)))))
+  (let [length-type (get binary 6)
+        fifteen-bit-length (= \0 length-type)]
+    (if fifteen-bit-length
+      (parse-length-operator binary)
+      (parse-count-operator binary))))
 
 (defn parse-packet [binary]
   (letfn [(valid-input? [binary] (> (count (frequencies binary)) 1))]
