@@ -52,14 +52,6 @@
 
 (declare parse-packet)
 
-(comment
- (parse-packet "00000000000000000101100001000101010110001011001000100000000010000100011000111000110100")
- (parse-packet "100100000100011000001100000")
-
- (parse-packet "0011000001100000")
-
- true)
-
 (defn parse-literal [binary]
   (let [substr (subs binary 6)
         literal-chunks (extract-chunks (partition 5 substr))
@@ -78,34 +70,29 @@
         packets
         (recur (:remainder packet) (conj packets packet))))))
 
-(comment
-  (get-packets "00000000000000000101100001000101010110001011001000100000000010000100011000111000110100")
-  true)
-
-
 (defn parse-packet [binary]
   (letfn [(is-literal? [type-id] (= 4 type-id))
           (invalid-input? [binary] (< (count (frequencies binary)) 2))
           (valid-input? [binary] (not (invalid-input? binary)))
           (handle-15-bit [binary]
             (let [length-bits (subs binary 7 22)
-                  sub-packet-length (Integer/parseInt length-bits 2)
+                  sub-packet-length (binary-to-number length-bits)
                   packet-binary (subs binary 22 (+ 22 sub-packet-length))]
-              {:packets (get-packets packet-binary)
-               :operator-type :15-bit
+              {:operator-type :15-bit
+               :packets (get-packets packet-binary)
                :remainder (subs binary (+ 22 sub-packet-length))}))
 
           (handle-11-bit [binary]
             (let [length-bits (subs binary 7 18)
-                  packet-count (Integer/parseInt length-bits 2)
+                  packet-count (binary-to-number length-bits)
                   packet-string (subs binary 18)
                   packets (get-packets packet-string)]
                   ;packets-as-chars (if (> packet-count 1)
                   ;                   (partition 11 packet-string)
                   ;                   (vector (vec packet-string)))
                   ;packets-as-binary (map #(apply str %) packets-as-chars)]
-              {:packets packets
-               :operator-type :11-bit}))
+              {:operator-type :11-bit
+               :packets packets}))
 
           (parse-operator [binary]
             (let [length-type (get binary 6)
@@ -122,17 +109,34 @@
           (merge header (parse-literal binary))
           (merge header (parse-operator binary)))))))
 
+(defn flatten-packets [packet]
+  (let [{:keys [packets]} packet
+        version-map (select-keys packet [:version])
+        child-versions
+        (if packets
+          (reduce (fn [acc cp]
+                    (conj acc (flatten-packets cp)))
+                  [version-map]
+                  packets)
+          version-map)]
+    child-versions))
+
+(defn parse-hex [hex]
+  (->> (hex-to-binary hex)
+       (parse-packet)))
 
 (defn part1 []
-  (->> (hex-to-binary "8A004A801A8002F478")
-       (parse-packet))
+  (->> (parse-hex "C0015000016115A2E0802F182340")
+       (flatten-packets)
+       (flatten)
+       (map :version)
+       (reduce +)))
 
+(comment
 
-  true
-
-  (def hex "8A004A801A8002F478"))
-(def hex "D2FE28")
-(def hex "38006F45291200")
+  (def hex "8A004A801A8002F478")
+  (def hex "D2FE28")
+  (def hex "38006F45291200"))
 
 (comment
   (parse-packet "1101000101001010010001001000000000")
