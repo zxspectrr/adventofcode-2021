@@ -42,10 +42,14 @@
         flattened-chunks (flatten literal-chunks)
         literal-binary (apply str flattened-chunks)
         bit-length (* 5 (count literal-chunks))
-        remainder (take-bits binary bit-length)]
+        [_ remainder] (take-bits binary bit-length)]
     {:type-id :literal
      :value   (binary-to-number literal-binary)
      :remainder (when (not= "" remainder) remainder)}))
+
+(comment
+  (parse-packet "110100101111111000101000")
+  ,)
 
 (defn get-packets
   ([binary max]
@@ -61,28 +65,26 @@
 
 (defn parse-operator [binary]
   (letfn [(handle-15-bit [binary]
-            (let [length-bits (subs binary 7 22)
-                  sub-packet-length (binary-to-number length-bits)
-                  packet-binary (subs binary 22 (+ 22 sub-packet-length))]
+            (let [[packet-length bits] (parse-bits binary 15)
+                  packets (get-packets bits nil)
+                  [_ remainder] (take-bits bits packet-length)]
               {:type-id :15-bit
-               :packets (get-packets packet-binary nil)
-               :remainder (subs binary (+ 22 sub-packet-length))}))
+               :packets packets
+               :remainder remainder}))
 
           (handle-11-bit [binary]
-            (let [length-bits (subs binary 7 18)
-                  packet-count (binary-to-number length-bits)
-                  packet-string (subs binary 18)
+            (let [[packet-count packet-string] (parse-bits binary 11)
                   packets (get-packets packet-string packet-count)
                   remainder (->> (last packets) (:remainder))]
               {:type-id :11-bit
                :packets packets
                :remainder remainder}))]
 
-    (let [length-type (get binary 6)
-          fifteen-bit-length (= \0 length-type)]
+    (let [[length-type bits] (parse-bits binary 1)
+          fifteen-bit-length (= 0 length-type)]
       (if fifteen-bit-length
-        (handle-15-bit binary)
-        (handle-11-bit binary)))))
+        (handle-15-bit bits)
+        (handle-11-bit bits)))))
 
 (defn parse-packet [binary]
   (letfn [(valid-input? [binary] (> (count (frequencies binary)) 1))]
@@ -92,12 +94,8 @@
             {:keys [type]} header
             [_ body] (take-bits binary 6)]
         (if (= type 4)
-          (merge header (parse-literal body)))))))
-          ;(merge header (parse-operator binary)))))))
-
-(comment
-  (parse-packet "110100101111111000101000")
-  ,)
+          (merge header (parse-literal body))
+          (merge header (parse-operator body)))))))
 
 (defn flatten-packets [packet]
   (let [{:keys [packets]} packet
@@ -113,11 +111,11 @@
     child-versions))
 
 (defn parse-hex [hex]
-  (->> (hex-to-binary "C200B40A82")
+  (->> (hex-to-binary hex)
        (parse-packet)))
 
 (defn part1 []
-  (->> (parse-hex hex)
+  (->> (parse-hex "620080001611562C8802118E34")
        (flatten-packets)
        (map :version)
        (reduce +)))
