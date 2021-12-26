@@ -38,12 +38,11 @@
      :binary binary}))
 
 (defn parse-literal [binary]
-  (let [[_ substr] (take-bits binary 6)
-        literal-chunks (extract-chunks (partition 5 substr))
+  (let [literal-chunks (extract-chunks (partition 5 binary))
         flattened-chunks (flatten literal-chunks)
         literal-binary (apply str flattened-chunks)
         bit-length (* 5 (count literal-chunks))
-        [_ remainder] (take-bits substr bit-length)]
+        [_ remainder] (take-bits binary bit-length)]
     {:type-id :literal
      :value   (binary-to-number literal-binary)
      :remainder remainder}))
@@ -79,6 +78,11 @@
      :packets   packets
      :remainder remainder}))
 
+(comment
+  (->> (parse-hex hex)
+       (calculate-values))
+  ,)
+
 (defn parse-operator [binary]
   (let [length-type (get binary 6)
         fifteen-bit-length (= \0 length-type)]
@@ -91,9 +95,10 @@
 
     (when (valid-input? binary)
       (let [header (parse-header binary)
+            [_ body] (take-bits binary 6)
             {:keys [type]} header]
         (if (= type 4)
-          (merge header (parse-literal binary))
+          (merge header (parse-literal body))
           (merge header (parse-operator binary)))))))
 
 (defn flatten-packets [packet]
