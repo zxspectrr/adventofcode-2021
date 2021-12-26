@@ -31,10 +31,8 @@
 (declare parse-packet)
 
 (defn parse-header [binary]
-  (let [version-bits (subs binary 0 3)
-        version (binary-to-number version-bits)
-        type-bits (subs binary 3 6)
-        type (binary-to-number type-bits)]
+  (let [[version bits] (parse-bits binary 3)
+        [type _] (parse-bits bits 3)]
     {:version version
      :type type
      :binary binary}))
@@ -116,7 +114,7 @@
        (parse-packet)))
 
 (defn part1 []
-  (->> (parse-hex hex)
+  (->> (parse-hex "D2FE28")
        (flatten-packets)
        (map :version)
        (reduce +)))
