@@ -107,8 +107,9 @@
         3 max
         conj))
 
-(defn combine-packet [packet]
-  (let [{:keys [type-id value packets type]} packet]
+(defn combine-packet
+  ([packet]
+   (let [{:keys [type-id value packets type]} packet]
      (if (= type-id :literal)
        value
        {:type     type
@@ -116,7 +117,9 @@
                             (conj total (combine-packet p)))
                           []
                           packets)
-        :operator (get-operator packet)})))
+        :operator (get-operator packet)}))))
+
+(defn sum-packets [packet])
 
 (defn part2 []
   (->> (parse-hex "620080001611562C8802118E34")
