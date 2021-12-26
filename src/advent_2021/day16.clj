@@ -50,9 +50,8 @@
      :remainder remainder}))
 
 (defn parse-operator [binary]
-  (let [[length-type body] (take-bits binary 1)
-        fifteen-bit-length (= "0" length-type)]
-    (if fifteen-bit-length
+  (let [[length-type body] (take-bits binary 1)]
+    (if (= "0" length-type)
       (parse-length-operator body)
       (parse-count-operator body))))
 
