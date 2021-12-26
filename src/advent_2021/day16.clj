@@ -65,10 +65,10 @@
 (defn parse-length-operator [binary]
   (let [[_ bits] (take-bits binary 7)
         [sub-packet-length bits] (parse-bits bits 15)
-        packet-binary (subs binary 22 (+ 22 sub-packet-length))]
+        [packet-binary remainder] (take-bits bits sub-packet-length)]
     {:type-id   :15-bit
      :packets   (get-packets packet-binary nil)
-     :remainder (subs binary (+ 22 sub-packet-length))}))
+     :remainder remainder}))
 
 (comment
   (parse-hex "D2FE28")
