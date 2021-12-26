@@ -61,17 +61,15 @@
                 (conj packets packet)
                 (inc index)))))))
 
-(defn parse-length-operator [binary]
-  (let [[_ bits] (take-bits binary 7)
-        [sub-packet-length bits] (parse-bits bits 15)
+(defn parse-length-operator [bit]
+  (let [[sub-packet-length bits] (parse-bits bits 15)
         [packet-binary remainder] (take-bits bits sub-packet-length)]
     {:type-id   :15-bit
      :packets   (get-packets packet-binary nil)
      :remainder remainder}))
 
-(defn parse-count-operator [binary]
-  (let [[_ bits] (take-bits binary 7)
-        [packet-count packet-string] (parse-bits bits 11)
+(defn parse-count-operator [bits]
+  (let [[packet-count packet-string] (parse-bits bits 11)
         packets (get-packets packet-string packet-count)
         remainder (->> (last packets) (:remainder))]
     {:type-id   :11-bit
@@ -84,11 +82,11 @@
   ,)
 
 (defn parse-operator [binary]
-  (let [length-type (get binary 6)
-        fifteen-bit-length (= \0 length-type)]
+  (let [[length-type body] (take-bits binary 1)
+        fifteen-bit-length (= "0" length-type)]
     (if fifteen-bit-length
-      (parse-length-operator binary)
-      (parse-count-operator binary))))
+      (parse-length-operator body)
+      (parse-count-operator body))))
 
 (defn parse-packet [binary]
   (letfn [(valid-input? [binary] (get (frequencies binary) \1))]
@@ -99,7 +97,7 @@
             {:keys [type]} header]
         (if (= type 4)
           (merge header (parse-literal body))
-          (merge header (parse-operator binary)))))))
+          (merge header (parse-operator body)))))))
 
 (defn flatten-packets [packet]
   (let [{:keys [packets]} packet
