@@ -86,18 +86,6 @@
           (merge header (parse-literal binary))
           (merge header (parse-operator binary)))))))
 
-(defn set-value
-  ([{:keys [type packets type-id value] :as packet}]
-   (if (= type-id :literal)
-     packet
-     {:type     type
-      :value (reduce (fn [acc p]
-                       (conj acc (set-value p)))
-                     ;(case type
-                     ;  0 (+ acc (set-value p))))
-                     nil
-                     packets)})))
-
 (defn get-operator [{:keys [type]}]
   (case type
     0 (fn [total value]
@@ -129,8 +117,7 @@
               (= total value) 1
               :else 0))
 
-    (fn [total value]
-      total)))
+    (fn [total value] total)))
 
 (defn combine-packet
   ([packet]
@@ -148,8 +135,7 @@
 (defn part2 []
   (->> (parse-hex "C200B40A82")
        (combine-packet))
-
-  (comment))
+ (comment))
 
 (defn flatten-packets [packet]
   (let [{:keys [packets]} packet
