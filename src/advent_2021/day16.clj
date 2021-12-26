@@ -114,10 +114,11 @@
         version-map (select-keys packet [:version])
         child-versions
         (if packets
-          (reduce (fn [acc cp]
-                    (conj acc (flatten-packets cp)))
-                  [version-map]
-                  packets)
+          (->> (reduce (fn [acc cp]
+                         (conj acc (flatten-packets cp)))
+                       [version-map]
+                       packets)
+               (flatten))
           version-map)]
     child-versions))
 
@@ -126,11 +127,10 @@
        (parse-packet)))
 
 (defn part1 []
-  (->> (parse-hex "C0015000016115A2E0802F182340")
-       (flatten-packets)
-       (flatten)
-       (map :version)
-       (reduce +)))
+  (->> (parse-hex "A0016C880162017C3686B18A3D4780")
+       (flatten-packets)))
+       ;(map :version)))
+       ;(reduce +)))
 
 (comment
 
