@@ -1,7 +1,4 @@
-(ns advent-2021.day16
-  (:require [clojure.string :as str]
-            [clojure.set :as set]
-            [advent-2021.utils :as u]))
+(ns advent-2021.day16)
 
 (def hex (slurp "resources/day16/input.txt"))
 
@@ -112,11 +109,10 @@
        (parse-packet)))
 
 (defn part1 []
-  (->> (parse-hex "C200B40A82")
+  (->> (parse-hex hex)
        (flatten-packets)
        (map :version)
        (reduce +)))
-
 
 (defn get-operator [{:keys [type]}]
   (case type
@@ -142,22 +138,13 @@
 (defn create-reducers [packet]
   (let [{:keys [type-id value packets]} packet]
     (if (= type-id :literal)
-      {:op identity :args [value]}
-      {:op (get-operator packet)
-       :args (reduce (fn [acc p] (conj acc (create-reducers p)))
-                     []
-                     packets)})))
-
-(defn execute-reducers [reducer-map]
-  (let [{:keys [op args]} reducer-map]
-    (if (= op identity)
-      (apply op args)
-      (->> (reduce (fn [acc r] (conj acc (execute-reducers r)))
-                   []
-                   args)
-           (apply op)))))
+      value
+      (let [op (get-operator packet)
+            args (reduce (fn [acc p] (conj acc (create-reducers p)))
+                         []
+                         packets)]
+        (apply op args)))))
 
 (defn part2 []
   (->> (parse-hex hex)
-       (create-reducers)
-       (execute-reducers)))
+       (create-reducers)))
