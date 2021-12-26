@@ -93,35 +93,24 @@
           (merge header (parse-operator binary)))))))
 
 (defn get-operator [{:keys [type]}]
-  (println "type id" type)
   (case type
-    0 (fn [total value]
-        (if (nil? total) value
-                     (+ total value)))
-    1 (fn [total value]
-        (if (nil? total) value
-                         (* total value)))
-    2 (fn [total value]
-        (cond (nil? total) value
-              (< value total) value
-              :else total))
-    3 (fn [total value]
-        (cond (nil? total) value
-              (> value total) value
-              :else total))
-    5 (fn [total value]
-        (cond (nil? total) 0
-              (> total value) 1
+    0 +
+    1 *
+    2 min
+    3 max
+    5 (fn [first last]
+        (cond (nil? first) 0
+              (> first last) 1
               :else 0))
 
-    6 (fn [total value]
-        (cond (nil? total) 0
-              (< total value) 1
+    6 (fn [first last]
+        (cond (nil? first) 0
+              (< first last) 1
               :else 0))
 
-    7 (fn [total value]
-        (cond (nil? total) 0
-              (= total value) 1
+    7 (fn [first last]
+        (cond (nil? first) 0
+              (= first last) 1
               :else 0))))
 
 (defn combine-packet
@@ -139,9 +128,31 @@
                  packets)
          (reduce parent-operator))))))
 
+(defn create-reducers [packet]
+  (let [{:keys [type-id value packets]} packet]
+    (if (= type-id :literal)
+      {:op identity :args [value]}
+      {:op (get-operator packet)
+       :args (reduce (fn [acc p] (conj acc (create-reducers p)))
+                     []
+                     packets)})))
+
+(defn execute-reducers [reducer-map]
+  (let [{:keys [op args]} reducer-map]
+    (if (= op identity)
+      (apply op args)
+      (->> (reduce (fn [acc r]
+                     (conj acc (execute-reducers r)))
+                   []
+                   args)
+           (apply op)))))
+
+(apply identity [1])
+
 (defn part2 []
-  (->> (parse-hex "9C0141080250320F1802104A08")
-       (combine-packet))
+  (->> (parse-hex hex)
+       (create-reducers)
+       (execute-reducers))
  (comment
    (parse-packet "1100011000000000100001000001001010000010")
    ,))
