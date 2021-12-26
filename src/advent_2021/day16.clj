@@ -85,12 +85,21 @@
                   packet-binary (subs binary 22 (+ 22 sub-packet-length))]
               {:packets (get-packets packet-binary)}))
 
+          (handle-11-bit [binary]
+            (let [length-bits (subs binary 7 18)
+                  packet-count (Integer/parseInt length-bits 2)
+                  subs-end (+ 18 (* 11 packet-count))
+                  packet-string (subs binary 18 subs-end)
+                  packets-as-chars (partition 11 packet-string)
+                  packets-as-binary (map #(apply str %) packets-as-chars)]
+              {:packets (map parse-packet packets-as-binary)}))
+
           (parse-operator [binary]
             (let [length-type (get binary 5)
                   fifteen-bit-length (= \0 length-type)]
               (if fifteen-bit-length
                 (handle-15-bit binary)
-                false)))]
+                (handle-11-bit binary))))]
 
     (let [header (parse-packet-header binary)
           {:keys [type]} header]
@@ -101,7 +110,7 @@
 
 
 (defn part1 []
-  (->> (hex-to-binary "38006F45291200")
+  (->> (hex-to-binary "EE00D40C823060")
        (parse-packet))
 
 
