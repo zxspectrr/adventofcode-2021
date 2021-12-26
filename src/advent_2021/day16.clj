@@ -43,7 +43,8 @@
         literal-binary (apply str flattened-chunks)
         bit-length (+ 6 (* 5 (count literal-chunks)))
         remainder (subs binary bit-length)]
-    {:literal   (binary-to-number literal-binary)
+    {:type-id :literal
+     :value   (binary-to-number literal-binary)
      :remainder (when (not= "" remainder) remainder)}))
 
 (defn get-packets [binary]
@@ -59,14 +60,14 @@
             (let [length-bits (subs binary 7 22)
                   sub-packet-length (binary-to-number length-bits)
                   packet-binary (subs binary 22 (+ 22 sub-packet-length))]
-              {:operator-type :15-bit
+              {:type-id :15-bit
                :packets (get-packets packet-binary)
                :remainder (subs binary (+ 22 sub-packet-length))}))
 
           (handle-11-bit [binary]
             (let [packet-string (subs binary 18)
                   packets (get-packets packet-string)]
-              {:operator-type :11-bit
+              {:type-id :11-bit
                :packets packets}))]
 
     (let [length-type (get binary 6)
@@ -86,6 +87,18 @@
           (merge header (parse-literal binary))
           (merge header (parse-operator binary)))))))
 
+(defn set-value
+  ([{:keys [type packets type-id value] :as packet}]
+   (if (= type-id :literal)
+     packet
+     {:type     type
+      :value (reduce (fn [acc p]
+                       (conj acc (set-value p)))
+                       ;(case type
+                       ;  0 (+ acc (set-value p))))
+                     nil
+                     packets)})))
+
 (defn flatten-packets [packet]
   (let [{:keys [packets]} packet
         version-map (select-keys packet [:version])
@@ -104,10 +117,18 @@
        (parse-packet)))
 
 (defn part1 []
-  (->> (parse-hex hex)
+  (->> (parse-hex "C200B40A82")
        (flatten-packets)
        (map :version)
        (reduce +)))
+
+(defn part2 []
+  (->> (parse-hex "C200B40A82")
+       (set-value))
+
+  (comment))
+
+
 
 (comment
 
