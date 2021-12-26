@@ -38,15 +38,19 @@
      :binary binary}))
 
 (defn parse-literal [binary]
-  (let [substr (subs binary 6)
+  (let [[_ substr] (take-bits binary 6)
         literal-chunks (extract-chunks (partition 5 substr))
         flattened-chunks (flatten literal-chunks)
         literal-binary (apply str flattened-chunks)
-        bit-length (+ 6 (* 5 (count literal-chunks)))
-        remainder (subs binary bit-length)]
+        bit-length (* 5 (count literal-chunks))
+        [_ remainder] (take-bits substr bit-length)]
     {:type-id :literal
      :value   (binary-to-number literal-binary)
-     :remainder (when (not= "" remainder) remainder)}))
+     :remainder remainder}))
+
+(comment
+  (parse-hex "D2FE28")
+  ,)
 
 (defn get-packets
   ([binary max]
@@ -58,7 +62,9 @@
      (let [packet (parse-packet binary)]
        (if (or (not packet) (= index max))
          packets
-         (recur (:remainder packet) (conj packets packet) (inc index)))))))
+         (recur (:remainder packet)
+                (conj packets packet)
+                (inc index)))))))
 
 (defn parse-operator [binary]
   (letfn [(handle-15-bit [binary]
@@ -114,7 +120,7 @@
        (parse-packet)))
 
 (defn part1 []
-  (->> (parse-hex "D2FE28")
+  (->> (parse-hex hex)
        (flatten-packets)
        (map :version)
        (reduce +)))
