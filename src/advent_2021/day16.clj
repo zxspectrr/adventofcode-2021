@@ -22,7 +22,7 @@
              "E"  "1110"
              "F"  "1111"})
 
-(defn binary-to-number [binary] (Integer/parseInt binary 2))
+(defn binary-to-number [binary] (Long/parseLong  binary 2))
 
 (defn get-for-hex-char [char] (get hexmap (str char)))
 
@@ -127,10 +127,10 @@
        (parse-packet)))
 
 (defn part1 []
-  (->> (parse-hex "A0016C880162017C3686B18A3D4780")
-       (flatten-packets)))
-       ;(map :version)))
-       ;(reduce +)))
+  (->> (parse-hex hex)
+       (flatten-packets)
+       (map :version)
+       (reduce +)))
 
 (comment
 
