@@ -99,6 +99,20 @@
                      nil
                      packets)})))
 
+(defn get-operator [{:keys [type-id]}]
+  (case type-id
+    0 (fn [total value] (+ total value))
+    (fn [total value] total)))
+
+(defn combine-packet [packet running-total parent-operator]
+  (let [{:keys [type-id value children]} packet]
+    (if (= type-id :literal)
+      (parent-operator running-total value)
+      (reduce (fn [total p]
+                (combine-packet p total (get-operator type-id)))
+              nil
+              children))))
+
 (defn flatten-packets [packet]
   (let [{:keys [packets]} packet
         version-map (select-keys packet [:version])
