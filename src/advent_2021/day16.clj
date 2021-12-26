@@ -9,7 +9,6 @@
              "8"  "1000", "9"  "1001", "A"  "1010", "B"  "1011", "C"  "1100", "D"  "1101", "E"  "1110", "F"  "1111"})
 
 (defn binary-to-number [binary] (Long/parseLong  binary 2))
-
 (defn get-for-hex-char [char] (get hexmap (str char)))
 
 (defn hex-to-binary [hex]
@@ -25,6 +24,8 @@
         updated-chunks
         (recur updated-chunks (rest potential-chunks))))))
 
+(declare parse-packet)
+
 (defn parse-header [binary]
   (let [version-bits (subs binary 0 3)
         version (binary-to-number version-bits)
@@ -33,8 +34,6 @@
     {:version version
      :type type
      :binary binary}))
-
-(declare parse-packet)
 
 (defn parse-literal [binary]
   (let [substr (subs binary 6)
@@ -47,14 +46,17 @@
      :value   (binary-to-number literal-binary)
      :remainder (when (not= "" remainder) remainder)}))
 
-(defn get-packets [binary index max]
-  (loop [binary binary
-         packets []
-         index index]
-    (let [packet (parse-packet binary)]
-      (if (or (not packet) (= index max))
-        packets
-        (recur (:remainder packet) (conj packets packet) (inc index))))))
+(defn get-packets
+  ([binary max]
+   (get-packets binary 0 max))
+  ([binary index max]
+   (loop [binary binary
+          packets []
+          index index]
+     (let [packet (parse-packet binary)]
+       (if (or (not packet) (= index max))
+         packets
+         (recur (:remainder packet) (conj packets packet) (inc index)))))))
 
 (defn parse-operator [binary]
   (letfn [(handle-15-bit [binary]
@@ -62,14 +64,14 @@
                   sub-packet-length (binary-to-number length-bits)
                   packet-binary (subs binary 22 (+ 22 sub-packet-length))]
               {:type-id :15-bit
-               :packets (get-packets packet-binary 0 nil)
+               :packets (get-packets packet-binary nil)
                :remainder (subs binary (+ 22 sub-packet-length))}))
 
           (handle-11-bit [binary]
             (let [length-bits (subs binary 7 18)
                   packet-count (binary-to-number length-bits)
                   packet-string (subs binary 18)
-                  packets (get-packets packet-string 0 packet-count)
+                  packets (get-packets packet-string packet-count)
                   remainder (->> (last packets) (:remainder))]
               {:type-id :11-bit
                :packets packets
@@ -91,73 +93,6 @@
         (if (= type 4)
           (merge header (parse-literal binary))
           (merge header (parse-operator binary)))))))
-
-(defn get-operator [{:keys [type]}]
-  (case type
-    0 +
-    1 *
-    2 min
-    3 max
-    5 (fn [first last]
-        (cond (nil? first) 0
-              (> first last) 1
-              :else 0))
-
-    6 (fn [first last]
-        (cond (nil? first) 0
-              (< first last) 1
-              :else 0))
-
-    7 (fn [first last]
-        (cond (nil? first) 0
-              (= first last) 1
-              :else 0))))
-
-(defn combine-packet
-  ([packet]
-   (combine-packet packet nil nil))
-
-  ([packet running-total parent-operator]
-   (let [{:keys [type-id value packets]} packet]
-     (if (= type-id :literal)
-       (parent-operator running-total value)
-       (->>
-         (reduce (fn [total p]
-                   (combine-packet p total (get-operator packet)))
-                 nil
-                 packets)
-         (reduce parent-operator))))))
-
-(defn create-reducers [packet]
-  (let [{:keys [type-id value packets]} packet]
-    (if (= type-id :literal)
-      {:op identity :args [value]}
-      {:op (get-operator packet)
-       :args (reduce (fn [acc p] (conj acc (create-reducers p)))
-                     []
-                     packets)})))
-
-(defn execute-reducers [reducer-map]
-  (let [{:keys [op args]} reducer-map]
-    (if (= op identity)
-      (apply op args)
-      (->> (reduce (fn [acc r]
-                     (conj acc (execute-reducers r)))
-                   []
-                   args)
-           (apply op)))))
-
-(apply identity [1])
-
-(defn part2 []
-  (->> (parse-hex hex)
-       (create-reducers)
-       (execute-reducers))
- (comment
-   (parse-packet "1100011000000000100001000001001010000010")
-   ,))
-
-
 
 (defn flatten-packets [packet]
   (let [{:keys [packets]} packet
@@ -183,12 +118,46 @@
        (reduce +)))
 
 
+(defn get-operator [{:keys [type]}]
+  (case type
+    0 +
+    1 *
+    2 min
+    3 max
+    5 (fn [first last]
+        (cond (nil? first) 0
+              (> first last) 1
+              :else 0))
 
-(comment
+    6 (fn [first last]
+        (cond (nil? first) 0
+              (< first last) 1
+              :else 0))
 
-  (def hex "8A004A801A8002F478")
-  (def hex "D2FE28")
-  (def hex "38006F45291200"))
+    7 (fn [first last]
+        (cond (nil? first) 0
+              (= first last) 1
+              :else 0))))
 
+(defn create-reducers [packet]
+  (let [{:keys [type-id value packets]} packet]
+    (if (= type-id :literal)
+      {:op identity :args [value]}
+      {:op (get-operator packet)
+       :args (reduce (fn [acc p] (conj acc (create-reducers p)))
+                     []
+                     packets)})))
 
+(defn execute-reducers [reducer-map]
+  (let [{:keys [op args]} reducer-map]
+    (if (= op identity)
+      (apply op args)
+      (->> (reduce (fn [acc r] (conj acc (execute-reducers r)))
+                   []
+                   args)
+           (apply op)))))
 
+(defn part2 []
+  (->> (parse-hex hex)
+       (create-reducers)
+       (execute-reducers)))
