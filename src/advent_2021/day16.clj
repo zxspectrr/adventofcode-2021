@@ -76,11 +76,6 @@
      :packets   packets
      :remainder remainder}))
 
-(comment
-  (->> (parse-hex hex)
-       (calculate-values))
-  ,)
-
 (defn parse-operator [binary]
   (let [[length-type body] (take-bits binary 1)
         fifteen-bit-length (= "0" length-type)]
