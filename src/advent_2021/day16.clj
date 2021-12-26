@@ -59,21 +59,20 @@
 (defn extract-chunks [potential-chunks]
   (loop [chunks []
          potential-chunks potential-chunks]
-    (let [chunk (first potential-chunks)
-          prefix (first chunk)
-          updated-chunks (conj chunks (rest chunk))]
-      (if (= \0 prefix)
+    (let [chunk (apply str (first potential-chunks))
+          [prefix bits] (take-bits chunk 1)
+          updated-chunks (conj chunks bits)]
+      (if (= "0" prefix)
         updated-chunks
         (recur updated-chunks (rest potential-chunks))))))
 
 (defn parse-literal [binary]
-  (let [literal-chunks (extract-chunks (partition 5 binary))
-        flattened-chunks (flatten literal-chunks)
-        literal-binary (apply str flattened-chunks)
-        bit-length (* 5 (count literal-chunks))
+  (let [chunks (extract-chunks (partition 5 binary))
+        combined-chunks (apply str chunks)
+        bit-length (* 5 (count chunks))
         [_ remainder] (take-bits binary bit-length)]
     {:type-id   :literal
-     :value     (binary-to-number literal-binary)
+     :value     (binary-to-number combined-chunks)
      :remainder remainder}))
 
 (defn parse-header [binary]
