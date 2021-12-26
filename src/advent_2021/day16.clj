@@ -98,53 +98,28 @@
                        ;  0 (+ acc (set-value p))))
                      nil
                      packets)})))
-
+(reduce min [1 2 3])
 (defn get-operator [{:keys [type]}]
   (case type
-        0 (fn [total value]
-            (if (nil? total) value
-                (+ total value)))
-        1 (fn [total value]
-            (if (nil? total) value
-                             (* total value)))
-        2 (fn [total value]
-            (cond (nil? total) value
-                  (< value total) value
-                  :else total))
-        3 (fn [total value]
-            (cond (nil? total) value
-                  (> value total) value
-                  :else total))
-        5 (fn [total value]
-            (cond (nil? total) 0
-                  (= 1 total) 1
-                  (> total value) 1
-                  :else 0))
+        0 +
+        1 *
+        2 min
+        3 max
+        conj))
 
-        6 (fn [total value]
-            (cond (nil? total) 0
-                  (= 1 total) 1
-                  (> value total) 1
-                  :else 0))
-
-        (fn [total value]
-          total)))
-
-(defn combine-packet
-  ([packet]
-   (combine-packet packet nil nil))
-
-  ([packet running-total parent-operator]
-   (let [{:keys [type-id value packets]} packet]
+(defn combine-packet [packet]
+  (let [{:keys [type-id value packets type]} packet]
      (if (= type-id :literal)
-       (parent-operator running-total value)
-       (reduce (fn [total p]
-                 (combine-packet p total (get-operator packet)))
-               nil
-               packets)))))
+       value
+       {:type     type
+        :children (reduce (fn [total p]
+                            (conj total (combine-packet p)))
+                          []
+                          packets)
+        :operator (get-operator packet)})))
 
 (defn part2 []
-  (->> (parse-hex "F600BC2D8F")
+  (->> (parse-hex "620080001611562C8802118E34")
        (combine-packet))
 
   (comment))
