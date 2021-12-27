@@ -97,10 +97,8 @@
         version-map (select-keys packet [:version])
         child-versions
         (if packets
-          (->> (reduce (fn [acc cp]
-                         (conj acc (flatten-packets cp)))
-                       [version-map]
-                       packets)
+          (->> (map flatten-packets packets)
+               (cons version-map)
                (flatten))
           version-map)]
     child-versions))
@@ -133,9 +131,7 @@
     (if (= type-id :literal)
       value
       (let [op (get-operator packet)
-            args (reduce (fn [acc p] (conj acc (calculate-values p)))
-                         []
-                         packets)]
+            args (map calculate-values packets)]
         (apply op args)))))
 
 (defn part2 []
