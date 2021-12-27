@@ -118,9 +118,7 @@
 (defn get-operator [{:keys [type]}]
   (letfn [(comp-fn [operator]
             (fn [first last]
-              (cond (nil? first) 0
-                    (operator first last) 1
-                    :else 0)))]
+              (if (operator first last) 1 0)))]
     (case type
       0 +
       1 *
