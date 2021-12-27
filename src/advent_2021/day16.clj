@@ -116,25 +116,19 @@
        (reduce +)))
 
 (defn get-operator [{:keys [type]}]
-  (case type
-    0 +
-    1 *
-    2 min
-    3 max
-    5 (fn [first last]
-        (cond (nil? first) 0
-              (> first last) 1
-              :else 0))
-
-    6 (fn [first last]
-        (cond (nil? first) 0
-              (< first last) 1
-              :else 0))
-
-    7 (fn [first last]
-        (cond (nil? first) 0
-              (= first last) 1
-              :else 0))))
+  (letfn [(comp-fn [operator]
+            (fn [first last]
+              (cond (nil? first) 0
+                    (operator first last) 1
+                    :else 0)))]
+    (case type
+      0 +
+      1 *
+      2 min
+      3 max
+      5 (comp-fn >)
+      6 (comp-fn <)
+      7 (comp-fn =))))
 
 (defn calculate-values [packet]
   (let [{:keys [type-id value packets]} packet]
