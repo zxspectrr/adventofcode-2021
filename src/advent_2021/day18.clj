@@ -64,16 +64,14 @@
     (walk2 v parents)))
 
 (defn walk2 [arr parents]
-  (when (> (count parents) 3)
-    (prn (count parents)))
-
-
-
   (let [[a b] arr
-        new-parents (conj parents arr)
-        new-a (adjust a new-parents)
-        new-b (adjust b new-parents)]
-    [new-a new-b]))
+        explode? (> (count parents) 3)]
+    ;(when explode?
+    (prn parents)
+    (let [new-parents (cons arr parents)
+          new-a (adjust a new-parents)
+          new-b (adjust b new-parents)]
+      [new-a new-b])))
 
 (comment
   (walk2 [7 [6 [5 [4 [3 2]]]]] [])
