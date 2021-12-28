@@ -1,12 +1,13 @@
 (ns advent-2021.day17)
 
 (def target [[240 292] [-57 90]])
-(def target [[20 30] [-5 10]])
 
 (def target-x (set (range 20 31)))
-(def target-y (set (range -5 11)))
+(def target-y (set (range -10 -4)))
 
-(defn in-range? [range value] (some range [value]))
+(defn in-range-axis? [range value] (some range [value]))
+(defn in-range? [[x y]]
+  (and (in-range-axis? target-x x) (in-range-axis? target-y y)))
 
 (defn adjust-velocity [[x y]]
   [(if (> x 0) (dec x) 0)
@@ -20,6 +21,27 @@
         new-velocity (adjust-velocity velocity)]
     {:position new-pos :velocity new-velocity}))
 
+(defn continue? [{:keys [position]}]
+  (let [[_x y] position
+        min-y (reduce min target-y)]
+    (> y min-y)))
+
+(defn winning-throw? [v]
+  (->> (take-while continue?
+                   (iterate step {:position [0 0] :velocity v}))
+       last
+       (#(in-range? (:position %)))
+       some?))
+
 (comment
- (take 9 (iterate step {:position [0 0] :velocity [7 2]}))
+  (winning-throw? [7 2])
+
+  (->>
+    (take-while continue?
+                (iterate step {:position [0 0] :velocity [7 2]}))
+    last
+    (#(in-range? (:position %)))
+    some?)
+
+  (str "test")
  ,)
