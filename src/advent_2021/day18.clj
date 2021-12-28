@@ -58,10 +58,22 @@
 
 (declare walk2)
 
+(defn find-first-a [parents]
+  (reduce (fn [acc [a _]]
+            (if (and (number? a) (not acc))
+              a
+              acc))
+          nil
+          parents))
+
 (defn adjust [v parents]
-  (if (number? v)
-    v
-    (walk2 v parents)))
+  (let [[a b] v
+        explode? (> (count parents) 3)]
+
+    (cond (number? v) v
+          explode? (find-first-a)
+
+      (walk2 v parents))))
 
 (defn walk2 [arr parents]
   (let [[a b] arr
@@ -72,6 +84,8 @@
           new-a (adjust a new-parents)
           new-b (adjust b new-parents)]
       [new-a new-b])))
+
+
 
 (comment
   (walk2 [7 [6 [5 [4 [3 2]]]]] [])
