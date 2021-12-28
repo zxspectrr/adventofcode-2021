@@ -38,8 +38,21 @@
 
 (comment
 
-  (->> (find-leaf [7 [6 [5 [4 [3 2]]]]])
+  (-> (zip/vector-zip [1 2 3])
+      zip/down
+      zip/right
+      (zip/replace [5 6])
+      zip/root)
+
+
+  (->> (find-leaf [[3,[2,[1,[7,3]]]],[6,[5,[4,[3,2]]]]])
        (explode?))
+
+  (->> (zip/vector-zip [[3,[2,[1,[7,3]]]],[6,[5,[4,[3,2]]]]])
+       (iterate zip/next)
+       (take 100)
+       (last)
+       (zip/node))
 
   ,)
 
