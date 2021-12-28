@@ -23,8 +23,9 @@
     {:position new-pos :velocity new-velocity :in-range (some? (in-range? new-pos))}))
 
 (defn continue? [{:keys [position]}]
-  (let [[_x y] position
-        min-y (reduce min target-y)]
+  (let [[x y] position
+        min-y (reduce min target-y)
+        max-x (reduce max target-x)]
     (> y min-y)))
 
 (defn do-throw [v]
@@ -41,8 +42,8 @@
        some?))
 
 (comment
-  (winning-throw? [7 1])
-  (do-throw [7 1])
+  (winning-throw? [20 2])
+  (do-throw [20 2])
 
 
   (def target [[20 30] [-5 -10]])
