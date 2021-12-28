@@ -1,6 +1,7 @@
 (ns advent-2021.day17)
 
-(def target [[240 292] [-57 90]])
+;(def target [[240 292] [-57 90]])
+(def target [[20 30] [-5 -10]])
 
 (def target-x (set (range 20 31)))
 (def target-y (set (range -10 -4)))
@@ -35,9 +36,14 @@
 
 (defn winning-throw? [v]
   (->> (do-throw v)
-       (filter in-range?)
+       (filter #(in-range? (:position %)))
+       not-empty
        some?))
 
 (comment
+  (winning-throw? [7 1])
+  (do-throw [7 1])
 
+
+  (def target [[20 30] [-5 -10]])
  ,)
