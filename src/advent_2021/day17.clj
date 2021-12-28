@@ -35,21 +35,9 @@
 
 (defn winning-throw? [v]
   (->> (do-throw v)
-       last
-       ;:in-range
-       (#(in-range? (:position %)))
+       (filter in-range?)
        some?))
 
 (comment
-  (winning-throw? [6 9])
-  (last (do-throw [6 9]))
 
-  (->>
-    (take-while continue?
-                (iterate step {:position [0 0] :velocity [7 2]}))
-    last
-    (#(in-range? (:position %)))
-    some?)
-
-  (str "test")
  ,)
