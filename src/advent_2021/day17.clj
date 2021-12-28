@@ -19,22 +19,30 @@
 (defn step [{:keys [position velocity]}]
   (let [new-pos (adjust-position position velocity)
         new-velocity (adjust-velocity velocity)]
-    {:position new-pos :velocity new-velocity}))
+    {:position new-pos :velocity new-velocity :in-range (some? (in-range? new-pos))}))
 
 (defn continue? [{:keys [position]}]
   (let [[_x y] position
         min-y (reduce min target-y)]
     (> y min-y)))
 
+(defn do-throw [v]
+  (let [throws (->> (take-while continue?
+                                (iterate step {:position [0 0] :velocity v}))
+                    (into []))
+        final (step (last throws))]
+    (conj throws final)))
+
 (defn winning-throw? [v]
-  (->> (take-while continue?
-                   (iterate step {:position [0 0] :velocity v}))
+  (->> (do-throw v)
        last
+       ;:in-range
        (#(in-range? (:position %)))
        some?))
 
 (comment
-  (winning-throw? [7 2])
+  (winning-throw? [6 9])
+  (last (do-throw [6 9]))
 
   (->>
     (take-while continue?
