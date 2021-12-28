@@ -15,9 +15,11 @@
 (defn adjust-position [[px py] [vx vy]]
   [(+ px vx) (+ py vy)])
 
-(defn step [[position velocity]]
+(defn step [{:keys [position velocity]}]
   (let [new-pos (adjust-position position velocity)
         new-velocity (adjust-velocity velocity)]
-    [new-pos new-velocity]))
+    {:position new-pos :velocity new-velocity}))
 
-(take 5 (iterate step [[0 0] [7 2]]))
+(comment
+ (take 9 (iterate step {:position [0 0] :velocity [7 2]}))
+ ,)
