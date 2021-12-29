@@ -18,42 +18,44 @@
          (number? (second n)))))
 
 (defn find-node [node pred direction]
-  (loop [node node]
+  (loop [node (direction node)]
     (cond
       (edge? node) nil
       (pred node) node
       :else (recur (direction node)))))
 
+(defn find-explodable [root]
+  (find-node root explodable? zip/next))
+
+(def leaf? (complement zip/branch?))
+
+(defn next-leaf? [node] (find-node node leaf? zip/next))
+(defn prev-leaf? [node] (find-node node leaf? zip/prev))
+
+(defn do-explode [node]
+  (->> (zip/replace node 0)))
+
+(defn explode [root]
+  (if-let [exp (find-explodable root)]
+    (->> (reduce (fn [acc x]
+                   (if (= acc x) (reduced x) x))
+                 (iterate do-explode exp))
+         (zip/root))
+    root))
+
+(defn process [number]
+  (->> (zip/vector-zip number)
+       (explode)))
+
 (comment
 
-  (find-node root explodable? zip/prev)
+  (def exp (find-node root explodable? zip/next))
+  (def root (zip/vector-zip [[[[[9 8],1 ],2 ],3 ],4]))
+  (def blank (zip/replace exp 0))
 
-  (def root (zip/vector-zip [[[[[9,8],1],2],3],4]))
+  (process [[[[[9 8],1 ],2 ],3 ],4])
 
-  (def iter (iterate zip/next root))
-
-  (def child (last (take 4 iter)))
-
-  (explodable? (zip/next child))
-
-  (zip/next child)
-
-  (zip/branch? child)
-
-  (count (zip/path child))
-
-  (zip/node child)
-
-  (zip/path (last (take 4 iter)))
-
-  (def beginning (zip/prev root))
-  (def end (last (take 100 (iterate zip/next root))))
-
-
-
-  (edge? beginning)
-  (edge? end)
-
-
-  true
   ,)
+
+
+                
