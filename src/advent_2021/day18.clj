@@ -54,21 +54,28 @@
              (last)))
       node)))
 
-(defn explode [node]
+(defn do-explode [node]
   (-> (update-left node)
       (update-right)
       (zip/replace 0)
       (zip/root)))
 
+(defn explode [root]
+  (loop [node root]
+    (let [explodable (find-explodable-node node)]
+      (if explodable
+        (recur (do-explode explodable))
+        node))))
+
 (defn process-number [number]
-  (let [root (zip/vector-zip number)
-        explodable (find-explodable-node root)]
-    (if explodable
-      (explode explodable)
-      number)))
+  (->> (zip/vector-zip number)
+       (explode)
+       (zip/node)))
 
 (comment
+  (process-number [[3,[2,[1,[7,3]]]],[6,[5,[4,[3,2]]]]])
 
+  (find-explodable-node (zip/vector-zip [[[9,8],1],2]))
   ,)
 
 
