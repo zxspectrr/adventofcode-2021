@@ -20,17 +20,20 @@
 (defn find-left-num [node]
   (loop [node node
          path-count 0]
-    (if (zip/branch? node)
-      (recur (zip/prev node) (inc path-count))
-      [node path-count])))
+    (cond
+      (nil? node) [node path-count]
+      (zip/branch? node) (recur (zip/prev node) (inc path-count))
+      :else [node path-count])))
 
 (defn update-left [node]
-  (let [[ln pc] (find-left-num node)
-        [[a _b]] node
-        updated (zip/edit ln + a)]
-    (->> (iterate zip/next updated)
-         (take (inc pc))
-         (last))))
+  (let [[ln pc] (find-left-num node)]
+    (if ln
+      (let [[[a _b] _] node
+            updated (zip/edit ln + a)]
+        (->> (iterate zip/next updated)
+             (take (inc pc))
+             (last)))
+      node)))
 
 (defn find-right-num [node]
   (let [outer (->> (zip/next node) zip/next zip/next)]
@@ -42,12 +45,14 @@
         :else [n path-count]))))
 
 (defn update-right [node]
-  (let [[rn pc] (find-right-num node)
-        [[_a b]] node
-        updated (zip/edit rn + b)]
-    (->> (iterate zip/prev updated)
-         (take (inc pc))
-         (last))))
+  (let [[rn pc] (find-right-num node)]
+    (if rn
+      (let [[[_a b] _] node
+            updated (zip/edit rn + b)]
+        (->> (iterate zip/prev updated)
+             (take (inc pc))
+             (last)))
+      node)))
 
 (defn explode [node]
   (-> (update-left node)
@@ -56,6 +61,8 @@
       (zip/root)))
 
 (comment
+
+  (zip/next root)
 
   (def root (zip/vector-zip [[3 [2 [ 1,[ 7,3 ]]]] [ 6,[ 5,[ 4,[ 3,2]]]]]))
 
