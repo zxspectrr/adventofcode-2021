@@ -6,16 +6,16 @@
   (->> (u/read-lines "resources/day18/input.txt")
        (map read-string)))
 
-;(def numbers [[1,1] [2,2] [3,3] [4,4] [5,5]])
-
 (defn find-explodable-node [root]
-  (loop [[node-value _node-info :as node] root]
-    (cond
-      (zip/end? node) nil
-      (and (zip/branch? node)
-           (number? (first node-value))
-           (number? (second node-value))) node
-      :else (recur (zip/next node)))))
+  (loop [[node-value node-info :as node] root]
+    (let [parent-count (count (:pnodes node-info))]
+      (cond
+        (zip/end? node) nil
+        (and (zip/branch? node)
+             (> parent-count 3)
+             (number? (first node-value))
+             (number? (second node-value))) node
+        :else (recur (zip/next node))))))
 
 (defn find-left-num [node]
   (loop [node node
@@ -40,8 +40,8 @@
     (loop [n outer
            path-count 3]
       (cond
-        (zip/branch? n) (recur (zip/next n) (inc path-count))
         (zip/end? n) [nil path-count]
+        (zip/branch? n) (recur (zip/next n) (inc path-count))
         :else [n path-count]))))
 
 (defn update-right [node]
@@ -61,22 +61,13 @@
       (zip/root)))
 
 (defn process-number [number]
-  (-> (zip/vector-zip number)
-      (find-explodable-node)
-      (explode)))
+  (let [root (zip/vector-zip number)
+        explodable (find-explodable-node root)]
+    (if explodable
+      (explode explodable)
+      number)))
 
 (comment
-
-  (zip/next root)
-
-  (def root (zip/vector-zip [[3 [2 [ 1,[ 7,3 ]]]] [ 6,[ 5,[ 4,[ 3,2]]]]]))
-
-  (process-number (process-number (process-number [[3, [2, [8, 0]]], [9, [5, [4, [3, 2]]]]])))
-
-  (-> (zip/vector-zip [[3,[2,[8,0]]],[9,[5,[4,[3,2]]]]])
-      (find-explodable-node)
-      (explode))
-
 
   ,)
 
