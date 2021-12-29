@@ -26,25 +26,31 @@
   (find-node root explodable? zip/next))
 
 (def leaf? (complement zip/branch?))
+(defn zero-leaf? [node]
+  (and (leaf? node)
+       (zero? (zip/node node))))
 
 (defn next-leaf? [node] (find-node node leaf? zip/next))
 (defn prev-leaf? [node] (find-node node leaf? zip/prev))
 
-(defn increment-leaf [node v direction-pred]
-  (if-let [leaf (direction-pred node)]
-    (zip/edit leaf + v)
+(defn increment-left [node v]
+  (if-let [leaf (prev-leaf? node)]
+    (next-leaf? (zip/edit leaf + v))
     node))
 
-(defn increment-right [node v] (increment-leaf node v next-leaf?))
-(defn increment-left [node v] (increment-leaf node v prev-leaf?))
+(defn increment-right [node v]
+  (if-let [leaf (next-leaf? node)]
+    (prev-leaf? (zip/edit leaf + v))
+    node))
 
 (defn do-explode [node]
   (let [[a b] (zip/node node)]
     (-> (zip/replace node 0)
-        (increment-left  a)
+        (increment-left a)
         (increment-right b)
         (zip/root))))
 
+(comment (next-leaf? blank))
 
 (defn explode [root]
   (if-let [exp (find-explodable root)]
@@ -59,17 +65,9 @@
 
 (comment
 
-  (->
-    (increment-left blank 1)
-    (increment-right 1)
-    (zip/root)
-    (zip/node))
-
-  (depth exp)
-
   (do-explode exp)
 
-  (zip/node (zip/root exp))
+  (def node exp)
 
   (def root (zip/vector-zip [[6,[5,[4,[3,2]]]],1]))
   (def exp (find-explodable root))
