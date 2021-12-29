@@ -60,13 +60,20 @@
       (zip/replace 0)
       (zip/root)))
 
+(defn process-number [number]
+  (-> (zip/vector-zip number)
+      (find-explodable-node)
+      (explode)))
+
 (comment
 
   (zip/next root)
 
   (def root (zip/vector-zip [[3 [2 [ 1,[ 7,3 ]]]] [ 6,[ 5,[ 4,[ 3,2]]]]]))
 
-  (-> (zip/vector-zip [[[[[9,8],1],2],3],4])
+  (process-number (process-number (process-number [[3, [2, [8, 0]]], [9, [5, [4, [3, 2]]]]])))
+
+  (-> (zip/vector-zip [[3,[2,[8,0]]],[9,[5,[4,[3,2]]]]])
       (find-explodable-node)
       (explode))
 
