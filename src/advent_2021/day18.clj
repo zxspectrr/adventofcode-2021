@@ -23,58 +23,50 @@
       :else (recur (direction node)))))
 
 (defn find-explodable [root]
-  (find-node root explodable? zip/next))
+  (when root
+    (find-node root explodable? zip/next)))
 
 (def leaf? (complement zip/branch?))
-(defn zero-leaf? [node]
-  (and (leaf? node)
-       (zero? (zip/node node))))
 
 (defn next-leaf? [node] (find-node node leaf? zip/next))
 (defn prev-leaf? [node] (find-node node leaf? zip/prev))
 
-(defn increment-left [node v]
-  (if-let [leaf (prev-leaf? node)]
-    (next-leaf? (zip/edit leaf + v))
-    node))
-
-(defn increment-right [node v]
-  (if-let [leaf (next-leaf? node)]
-    (prev-leaf? (zip/edit leaf + v))
-    node))
-
 (defn do-explode [node]
-  (let [[a b] (zip/node node)]
-    (-> (zip/replace node 0)
-        (increment-left a)
-        (increment-right b)
-        (zip/root))))
+  (letfn [(increment-left [node v]
+            (if-let [leaf (prev-leaf? node)]
+              (next-leaf? (zip/edit leaf + v))
+              node))
 
-(comment (next-leaf? blank))
+          (increment-right [node v]
+            (if-let [leaf (next-leaf? node)]
+              (prev-leaf? (zip/edit leaf + v))
+              node))]
+
+    (if-let [exp (find-explodable node)]
+      (let [[a b] (zip/node exp)]
+        (-> (zip/replace exp 0)
+            (increment-left a)
+            (increment-right b)
+            (zip/root)
+            (zip/vector-zip)))
+      node)))
 
 (defn explode [root]
-  (if-let [exp (find-explodable root)]
-    (reduce (fn [acc x]
-              (if (= acc x) (reduced x) x))
-            (iterate do-explode exp))
-    root))
+  (reduce (fn [acc x]
+            (if (= acc x) (reduced x) x))
+          (iterate do-explode root)))
 
 (defn process [number]
   (->> (zip/vector-zip number)
-       (explode)))
+       (explode)
+       (zip/root)))
 
 (comment
 
-  (do-explode exp)
-
-  (def node exp)
-
+  (process [[6,[5,[4,[3,2]]]],1])
   (def root (zip/vector-zip [[6,[5,[4,[3,2]]]],1]))
   (def exp (find-explodable root))
   (def blank (zip/replace exp 0))
-
-  (process [[6,[5,[4,[3,2]]]],1])
-
   ,)
 
 
