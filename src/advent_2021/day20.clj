@@ -24,7 +24,6 @@
          (map #(get-pixel image % void)))))
 
 (def binary-map {\. "0" \# "1"})
-
 (def decode-number (partial nth decoder))
 
 (defn binary-to-long [binary-str]
@@ -39,9 +38,9 @@
 
 (defn get-coords [image]
   (let [width (count (first image))
-        height (count image)]
-    (->> (for [x (range -1 (inc width))
-               y (range -1 (inc height))]
+        r (range -1 (inc width))]
+    (->> (for [x r
+               y r]
            [x y])
          (sort-by second)
          (partition (+ 2 width)))))
@@ -66,7 +65,8 @@
       (nth n)
       :image
       flatten
-      frequencies))
+      frequencies
+      (#(get % \#))))
 
 (defn part1 []
   (process-times 2))
