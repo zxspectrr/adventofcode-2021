@@ -86,26 +86,9 @@
 (defn part1 []
   (add-and-get-magnitude numbers))
 
-(defn max-val [number1 number2]
-  (->> (map add-and-get-magnitude [[number1 number2] [number2 number1]])
-       (reduce max)))
-
-(defn get-max-val-for-number [numbers number]
-  (let [other-numbers (remove (partial = number) numbers)]
-    (->> (map (partial max-val number) other-numbers)
-         (reduce max))))
-
-(defn get-max-val-for-numbers [numbers]
-  (->> (map (partial get-max-val-for-number numbers) numbers)
-       (reduce max)))
-
 (defn part2 []
-  (get-max-val-for-numbers numbers))
-
-
-(comment
-  (process [[6,[5,[4,[3,2]]]],1])
-  (def root (zip/vector-zip [[6,[5,[4,[3,2]]]],1]))
-  (def exp (find-explodable root))
-  (def blank (zip/replace exp 0))
-  ,)
+  (->> (for [a numbers
+             b numbers
+             :when (not= a b)]
+         (add-and-get-magnitude [a b]))
+       (reduce max)))
