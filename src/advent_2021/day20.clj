@@ -40,12 +40,13 @@
 
 (defn get-coords [image]
   (let [width (count image)
-        r (range -1 (inc width))]
+        padding 1
+        r (range (* -1 padding) (+ padding width))]
     (->> (for [x r
                y r]
            [x y])
          (sort-by second)
-         (partition (+ 2 width)))))
+         (partition (+ (* 2 padding) width)))))
 
 (defn process-image [{:keys [image void]}]
   {:image (->> (get-coords image)
@@ -55,19 +56,34 @@
             \#
             \.)})
 
-(defn print-image [{:keys [image]}]
+(defn print-image [image]
   (doseq [x image]
     (prn (apply str x))))
+
+(defn write-image [image]
+  (doseq [l image]
+    (let [s (str (apply str l) "\n")]
+      (spit "resources/day20/output2.txt" s "\n" :append true))))
+
+(defn count-light [image]
+  (-> (flatten image)
+      (frequencies)
+      (get \#)))
 
 (defn process [times]
   (-> (iterate process-image (load-image))
       (nth times)
-      :image
-      (flatten)
-      (frequencies)))
+      :image))
 
 (defn part1 []
-  (process 2))
+  (->> (process 2)
+       (count-light)))
 
 (defn part2 []
-  (process 50))
+  (->> (process 50)
+       (count-light)))
+
+(comment
+  (print-image (:image (load-image)))
+  (->> (process 2)
+       (write-image)))
