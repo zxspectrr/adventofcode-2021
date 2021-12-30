@@ -50,25 +50,21 @@
 
 (defn get-coords [image]
   (let [width (count (first image))
-        height (count image)]
-    (->> (for [x (range -2 (+ 2 width))
-               y (range -2 (+ 2 height))]
+        height (count image)
+        padding 1]
+    (->> (for [x (range (flip padding) (+ padding width))
+               y (range (flip padding) (+ padding height))]
            [x y])
          (sort-by second)
-         (partition 9))))
+         (partition (+ (* 2 padding) width)))))
 
 (defn process-image [image]
-  ;(->> (map (partial get-pixel image) (get-coords image))
-  ;     (partition 15))
   (->> (get-coords image)
        (mapv (fn [line]
                (mapv (fn [coord]
                        (decode-point image coord))
                      line)))))
-       ;(map (partial decode-point image))))
-       ;(mapv (fn [line]
-       ;        (mapv (fn [x] x) line)))))
-       ;(map (partial apply str))))
+
 
 (defn print-image [image]
   (doseq [x (map (partial apply str) image)]
@@ -77,10 +73,17 @@
 
 (comment
 
+  (->> (mapv (fn [line]
+               (mapv (fn [x] (get-pixel image x)) line))
+             (get-coords image))
+       (print-image))
+
+  (get-coords image)
+
   (def image (load-image))
 
   (get-coords image)
-  (decode-point image [4 2])
+  (decode-point image [2 1])
 
   (->> (iterate process-image (load-image))
        (take 1)
