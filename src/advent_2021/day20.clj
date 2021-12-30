@@ -15,13 +15,15 @@
 (defn get-pixel [image [x y] default]
   (get-in image [y x] default))
 
+(defn neighbour-coords [[x y]]
+  (->> (for [ax [-1 0 1]
+             ay [-1 0 1]]
+         [(+ ax x) (+ ay y)])
+       (sort-by second)))
+
 (defn find-pixel-plus-neighbours [image [x y] void]
-  (let [adjustments [[-1 -1] [0 -1] [1 -1]
-                     [-1 0] [0 0] [1 0]
-                     [-1 1] [0 1] [1 1]]]
-    (->> (map (fn [[ax ay]]
-                [(+ x ax) (+ y ay)]) adjustments)
-         (map #(get-pixel image % void)))))
+    (map #(get-pixel image % void)
+         (neighbour-coords [x y])))
 
 (def binary-map {\. "0" \# "1"})
 (def decode-number (partial nth decoder))
@@ -73,7 +75,3 @@
 
 (defn part2 []
   (process-times 50))
-
-
-
-
