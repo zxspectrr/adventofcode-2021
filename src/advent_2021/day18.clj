@@ -74,10 +74,10 @@
           numbers))
 
 (defn get-magnitude [number]
-  (let [[a b] number
-        va (if (number? a) a (get-magnitude a))
-        vb (if (number? b) b (get-magnitude b))]
-    (+ (* va 3) (* vb 2))))
+  (if (coll? number)
+    (+ (* 3 (get-magnitude (first number)))
+       (* 2 (get-magnitude (second number))))
+    number))
 
 (defn add-and-get-magnitude [numbers]
   (->> (add-numbers numbers)
