@@ -69,8 +69,20 @@
   (doseq [x (map (partial apply str) image)]
     (prn x)))
 
+(defn part1 []
+  (->> (iterate process-image (load-image))
+       (take 3)
+       last
+       (print-image)))
+
+
 (comment
   (print-image (process-image (load-image)))
+
+  (print-image (process-image (process-image (load-image))))
+
+
+
   (->> (mapv (fn [line]
                (mapv (fn [x] (get-pixel image x)) line))
              (get-coords image))
