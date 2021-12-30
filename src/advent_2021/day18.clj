@@ -73,21 +73,17 @@
           nil
           numbers))
 
+(defn get-magnitude [number]
+  (let [[a b] number
+        va (if (number? a) a (get-magnitude a))
+        vb (if (number? b) b (get-magnitude b))]
+    (+ (* va 3) (* vb 2))))
+
+(defn part1 []
+  (->> (add-numbers numbers)
+       (get-magnitude)))
+
 (comment
-
-  (add-numbers [[[[0,[4,5]],[0,0]],[[[4,5],[2,6]],[9,5]]]
-                [7,[[[3,7],[4,3]],[[6,3],[8,8]]]]
-                [[2,[[0,8],[3,4]]],[[[6,7],1],[7,[1,6]]]]
-                [[[[2,4],7],[6,[0,5]]],[[[6,8],[2,8]],[[2,1],[4,5]]]]
-                [7,[5,[[3,8],[1,4]]]]
-                [[2,[2,2]],[8,[8,1]]]
-                [2,9]
-                [1,[[[9,3],9],[[9,0],[0,7]]]]
-                [[[5,[7,4]],7],1]
-                [[[[4,2],2],6],[8,7]]])
-
-  (process [[[[0,7],4],[15,[0,13]]],[1,1]])
-
   (process [[6,[5,[4,[3,2]]]],1])
   (def root (zip/vector-zip [[6,[5,[4,[3,2]]]],1]))
   (def exp (find-explodable root))
