@@ -1,7 +1,7 @@
 (ns advent-2021.day20
   (:require [advent-2021.utils :as u]))
 
-(def lines (u/read-lines "resources/day20/input.txt"))
+;(def lines (u/read-lines "resources/day20/input.txt"))
 (def lines (u/read-lines "resources/day20/small.txt"))
 
 (def decoder (first lines))
@@ -39,14 +39,6 @@
        (decode-number)))
 
 (def flip (partial * -1))
-(def double* (partial * 2))
-
-(defn get-image-width [image]
-  (let [width (count (first image))]
-    (* 3 width)))
-
-;(defn get-image-height [image]
-;  (let [height (count ())]))
 
 (defn get-coords [image]
   (let [width (count (first image))
@@ -73,44 +65,23 @@
   (->> (iterate process-image (load-image))
        (take 3)
        last
-       (print-image)))
+       flatten
+       frequencies))
+
+
 
 
 (comment
-  (print-image (process-image (load-image)))
-
-  (print-image (process-image (process-image (load-image))))
-
-
-
-  (->> (mapv (fn [line]
-               (mapv (fn [x] (get-pixel image x)) line))
-             (get-coords image))
-       (print-image))
-
-  (get-coords image)
-
-  (def image (load-image))
-
-  (get-coords image)
-  (decode-point image [1 2])
-
-  (get-pixel image [1 2])
+  (load-image)
 
   (->> (iterate process-image (load-image))
-       (take 1)
-       (print-image))
+       (take 3)
+       last
+       print-image)
 
-  (print-image (load-image))
+  (->> (iterate process-image (load-image))
+       (take 3)
+       last))
 
-  (print-image (get-coords image))
-
-
-  (decode-point [2 2])
-  (->> (find-pixel-plus-neighbours image [2 2])
-       (map binary-map)
-       (apply str)
-       (binary-to-long)
-       (map (partial apply str))))
 
 
