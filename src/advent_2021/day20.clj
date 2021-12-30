@@ -13,15 +13,6 @@
                        (mapv identity line))))
    :void \.})
 
-(defn get-coords [image]
-  (let [width (count image)
-        r (range -1 (inc width))]
-    (->> (for [x r
-               y r]
-           [x y])
-         (sort-by second)
-         (partition (+ 2 width)))))
-
 (defn get-pixel [image default [x y]]
   (get-in image [y x] default))
 
@@ -46,6 +37,15 @@
 
 (defn process-line [image default line]
   (mapv (partial process-pixel image default) line))
+
+(defn get-coords [image]
+  (let [width (count image)
+        r (range -1 (inc width))]
+    (->> (for [x r
+               y r]
+           [x y])
+         (sort-by second)
+         (partition (+ 2 width)))))
 
 (defn process-image [{:keys [image void]}]
   {:image (->> (get-coords image)
