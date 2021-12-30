@@ -5,41 +5,16 @@
 ;(def lines (u/read-lines "resources/day20/small.txt"))
 
 (def decoder (first lines))
+(def binary-map {\. 0 \# 1})
 
 (defn load-image []
-  {:image (mapv (fn [line]
-                  (mapv (fn [c] c) line))
-                (drop 2 lines))
+  {:image (->> (drop 2 lines)
+               (mapv (fn [line]
+                       (mapv identity line))))
    :void \.})
 
-(defn get-pixel [image [x y] default]
-  (get-in image [y x] default))
-
-(defn neighbour-coords [[x y]]
-  (->> (for [ax [-1 0 1]
-             ay [-1 0 1]]
-         [(+ ax x) (+ ay y)])
-       (sort-by second)))
-
-(defn find-pixel-plus-neighbours [image [x y] void]
-    (map #(get-pixel image % void)
-         (neighbour-coords [x y])))
-
-(def binary-map {\. "0" \# "1"})
-(def decode-number (partial nth decoder))
-
-(defn binary-to-long [binary-str]
-  (Long/parseLong binary-str 2))
-
-(defn decode-point [image point void]
-  (->> (find-pixel-plus-neighbours image point void)
-       (map binary-map)
-       (apply str)
-       (binary-to-long)
-       (decode-number)))
-
 (defn get-coords [image]
-  (let [width (count (first image))
+  (let [width (count image)
         r (range -1 (inc width))]
     (->> (for [x r
                y r]
@@ -47,31 +22,52 @@
          (sort-by second)
          (partition (+ 2 width)))))
 
-(defn process-line [image line void]
-  (mapv #(decode-point image % void) line))
+(defn get-pixel [image default [x y]]
+  (get-in image [y x] default))
+
+(defn get-point-and-neighbours [[x y]]
+  (->> (for [nx [-1 0 1]
+             ny [-1 0 1]]
+         [(+ nx x) (+ ny y)])
+       (sort-by second)))
+
+(defn get-neighbour-pixels [image default [x y]]
+  (map (partial get-pixel image default)
+       (get-point-and-neighbours [x y])))
+
+(defn parse-binary [str] (Long/parseLong str 2))
+
+(defn process-pixel [image default pixel]
+  (->> (get-neighbour-pixels image default pixel)
+       (map binary-map)
+       (apply str)
+       (parse-binary)
+       (nth decoder)))
+
+(defn process-line [image default line]
+  (mapv (partial process-pixel image default) line))
 
 (defn process-image [{:keys [image void]}]
   {:image (->> (get-coords image)
-               (mapv #(process-line image % void)))
-   :void (if (and (= \. void)
-                  (= (first decoder) \#))
-           \#
-           \.)})
+               (mapv (partial process-line image void)))
+   :void  (if (and (= (first decoder) \#)
+                   (= \. void))
+            \#
+            \.)})
 
-(defn print-image [image]
-  (doseq [x (map (partial apply str) image)]
-    (prn x)))
+(defn print-image [{:keys [image]}]
+  (doseq [x image]
+    (prn (apply str x))))
 
-(defn process-times [n]
+(defn process [times]
   (-> (iterate process-image (load-image))
-      (nth n)
+      (nth times)
       :image
-      flatten
-      frequencies
-      (#(get % \#))))
+      (flatten)
+      (frequencies)))
 
 (defn part1 []
-  (process-times 2))
+  (process 2))
 
 (defn part2 []
-  (process-times 50))
+  (process 50))
