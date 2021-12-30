@@ -43,20 +43,18 @@
           (increment-right b)
           (zip/root)))))
 
-(defn find-explodable [root]
-  (when root
-    (find-node root explodable? zip/next)))
+(defn adjust-number [number]
+  (condp (fn [expr dataset]
+           (find-node dataset expr zip/next))
+         (zip/vector-zip number)
 
-(defn explode [number]
-  (let [root (zip/vector-zip number)]
-    (if-let [exp (find-explodable root)]
-      (do-explode exp)
-      number)))
+    explodable? :>> do-explode
+    number))
 
 (defn process [number]
   (reduce (fn [acc x]
             (if (= acc x) (reduced x) x))
-          (iterate explode number)))
+          (iterate adjust-number number)))
 
 (comment
   (process [[6,[5,[4,[3,2]]]],1])
