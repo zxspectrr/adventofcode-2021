@@ -65,17 +65,57 @@
 (defn historic-step [previous-states roll]
   (next-step previous-states roll))
 
+(def previous-states [{:roll-count 0,
+                       :previous-roll 0,
+                       :dice-count 1,
+                       :dice-size 3,
+                       :winning-score 21,
+                       :board-positions {1 1, 2 2},
+                       :scores {1 0, 2 0},
+                       :turn 1}
+                      {:roll-count 1,
+                       :previous-roll 1,
+                       :dice-count 1,
+                       :dice-size 3,
+                       :winning-score 21,
+                       :board-positions {1 2, 2 2},
+                       :scores {1 2, 2 0},
+                       :turn 2}])
+
+(def games [[{:roll-count 0,
+              :previous-roll 0,
+              :dice-count 1,
+              :dice-size 3,
+              :winning-score 21,
+              :board-positions {1 1, 2 2},
+              :scores {1 0, 2 0},
+              :turn 1}
+             {:roll-count 1,
+              :previous-roll 1,
+              :dice-count 1,
+              :dice-size 3,
+              :winning-score 21,
+              :board-positions {1 2, 2 2},
+              :scores {1 2, 2 0},
+              :turn 2}]])
+
 (defn quantum-step [previous-states]
-  (mapv (partial historic-step previous-states) [1 2 3]))
-  ;(reduce (fn [acc ps]
-  ;          (let [new-states (mapv #(update-board ps [%]) [1 2 3])]
-  ;            (conj acc new-states)))
-  ;        []
-  ;        previous-states))
+  (mapv (partial historic-step previous-states) [1 2]))
+
+(defn quantum-games [games]
+  (reduce (fn [games game]
+            (let [games-for-game (quantum-step game)]
+              (into games games-for-game)))
+          []
+          games))
+
+(def initial-game-state
+  (assoc game-state :dice-count 1 :dice-size 3 :winning-score 21))
 
 (defn run-quantum [initial-game-state]
-  (->> (quantum-step [initial-game-state])))
-       ;(quantum-step)))
+  (->> (iterate quantum-games [[initial-game-state]])
+       (take 5)
+       (last)))
 
 (defn part-2 []
   (->> (assoc game-state :dice-count 1 :dice-size 3 :winning-score 21)
