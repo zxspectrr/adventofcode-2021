@@ -61,10 +61,10 @@
         (assoc :previous-roles new-rolls))))
 
 (defn run-game [game-state]
-  (take-while continue? (iterate step game-state)))
+  (drop-while continue? (iterate step game-state)))
 
 (defn part-1 []
-  (let [final-roll (->> game-state run-game last step)
+  (let [final-roll (->> game-state run-game first)
         {:keys [scores roll-count]} final-roll
         losing-score (->> (vals scores) sort first)]
     (* losing-score roll-count)))
@@ -129,9 +129,8 @@
 
 (defn run-quantum [initial-game-state]
   (->> (iterate quantum-games [[initial-game-state]])
-       (take-while has-active-games?)
-       last
-       quantum-games))
+       (drop-while has-active-games?)
+       first))
 
 (defn part-2 []
   (->> (assoc game-state :winning-score 4)
