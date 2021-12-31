@@ -1,4 +1,5 @@
-(ns advent-2021.day21)
+(ns advent-2021.day21
+  (:require [clojure.set :as set]))
 
 (defn combined-roll [previous-value dice-size dice-count]
   (let [roller-fn (fn [previous-value]
@@ -16,7 +17,7 @@
   (if (= 1 player-number) 2 1))
 
 (def starting-positions {1 1 2 2})
-;(def starting-positions {1 4 2 8})
+(def starting-positions {1 4 2 8})
 
 (def game-state {:roll-count      0
                  :previous-roll   0
@@ -82,25 +83,77 @@
                        :scores {1 2, 2 0},
                        :turn 2}])
 
-(def games [[{:roll-count 0,
-              :previous-roll 0,
-              :dice-count 1,
-              :dice-size 3,
-              :winning-score 21,
-              :board-positions {1 1, 2 2},
-              :scores {1 0, 2 0},
-              :turn 1}
-             {:roll-count 1,
-              :previous-roll 1,
-              :dice-count 1,
-              :dice-size 3,
-              :winning-score 21,
-              :board-positions {1 2, 2 2},
-              :scores {1 2, 2 0},
-              :turn 2}]])
+(def game [{:roll-count 0,
+            :previous-roll 0,
+            :dice-count 1,
+            :dice-size 3,
+            :winning-score 10,
+            :board-positions {1 1, 2 2},
+            :scores {1 0, 2 0},
+            :turn 1}
+           {:roll-count 1,
+            :previous-roll 1,
+            :dice-count 1,
+            :dice-size 3,
+            :winning-score 10,
+            :board-positions {1 2, 2 2},
+            :scores {1 2, 2 0},
+            :turn 2}
+           {:roll-count 2,
+            :previous-roll 1,
+            :dice-count 1,
+            :dice-size 3,
+            :winning-score 10,
+            :board-positions {1 2, 2 3},
+            :scores {1 2, 2 3},
+            :turn 1}
+           {:roll-count 3,
+            :previous-roll 1,
+            :dice-count 1,
+            :dice-size 3,
+            :winning-score 10,
+            :board-positions {1 3, 2 3},
+            :scores {1 5, 2 3},
+            :turn 2}
+           {:roll-count 4,
+            :previous-roll 1,
+            :dice-count 1,
+            :dice-size 3,
+            :winning-score 10,
+            :board-positions {1 3, 2 4},
+            :scores {1 5, 2 7},
+            :turn 1}
+           {:roll-count 5,
+            :previous-roll 2,
+            :dice-count 1,
+            :dice-size 3,
+            :winning-score 10,
+            :board-positions {1 5, 2 4},
+            :scores {1 10, 2 7},
+            :turn 2}
+           {:roll-count 6,
+            :previous-roll 1,
+            :dice-count 1,
+            :dice-size 3,
+            :winning-score 10,
+            :board-positions {1 5, 2 5},
+            :scores {1 10, 2 12},
+            :turn 1}])
+
+(def games [game])
+
+(defn has-winner? [game]
+  (winner? (last game)))
+
+(def is-active-game? (complement has-winner?))
+
+(defn has-active-games? [games]
+  (seq (filter is-active-game? games)))
+
+(def quantum-rolls [1 2 3])
 
 (defn quantum-step [previous-states]
-  (mapv (partial historic-step previous-states) [1 2]))
+  (mapv (partial historic-step previous-states) quantum-rolls))
 
 (defn quantum-games [games]
   (reduce (fn [games game]
@@ -110,17 +163,54 @@
           games))
 
 (def initial-game-state
-  (assoc game-state :dice-count 1 :dice-size 3 :winning-score 21))
+  (assoc game-state :dice-count 1 :dice-size 3 :winning-score 2))
+
+(defn get-winning-player [scores]
+  (->> (reduce (fn [acc [k v]]
+                 (if acc
+                   (let [[ak av] acc]
+                     (if (> v av) [k v] [ak av]))
+                   [k v]))
+               nil
+               scores)
+       first))
+
+(defn get-winner [game]
+  (->> (filter winner? game)
+       first
+       :scores
+       get-winning-player))
+
+(defn get-winners [games]
+  (map get-winner games))
+
+(def quantum-rolls [1 2 3])
+
+(defn rolls-for-games [games]
+  (map #(map :previous-roll %) games))
 
 (defn run-quantum [initial-game-state]
-  (->> (iterate quantum-games [[initial-game-state]])
-       (take 5)
-       (last)))
+  ;(->> (iterate quantum-games [[initial-game-state]])
+  ;     (take-while has-active-games?)
+  ;     (last)
+  ;     (quantum-games))
+  (->> (quantum-games [[initial-game-state]])
+       quantum-games
+       quantum-games
+       ;quantum-games
+       rolls-for-games))
 
 (defn part-2 []
   (->> (assoc game-state :dice-count 1 :dice-size 3 :winning-score 21)
-       run-quantum))
-
+       run-quantum
+       get-winners
+       frequencies))
 
 (comment
- ,)
+  (def initial-game-state (assoc game-state :dice-count 1 :dice-size 3 :winning-score 10))
+  (def results (run-quantum initial-game-state))
+
+
+  ,)
+
+
