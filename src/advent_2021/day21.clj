@@ -4,7 +4,8 @@
 (def starting-positions {1 4 2 8})
 
 (def game-state {:roll-count      0
-                 :rolls           [0]
+                 :roll            0
+                 :previous-roles  [0]
                  :winning-score   1000
                  :board-positions starting-positions
                  :scores          {1 0
@@ -37,21 +38,27 @@
 (defn update-winner-state [game-state]
   (assoc game-state :has-winner (game-has-winner? game-state)))
 
-(defn update-board [{:keys [board-positions turn] :as game-state} rolls]
+(defn update-board [{:keys [board-positions turn] :as game-state} total-roll]
   (let [board-pos (get board-positions turn)
-        total-roll (apply + rolls)
         new-pos (move board-pos total-roll)]
 
-    (-> (assoc game-state :rolls rolls)
+    (-> (assoc game-state :roll total-roll)
         (update :roll-count (partial + 3))
         (assoc :turn (get-next-turn turn))
         (update-in [:scores turn] (partial + new-pos))
         (assoc-in [:board-positions turn] new-pos)
         (update-winner-state))))
 
-(defn step [{:keys [rolls] :as game-state}]
-  (let [new-roles (combined-roll (last rolls))]
-    (update-board game-state new-roles)))
+(def cached-update-board (memoize update-board))
+
+(def get-total-roll
+  (memoize (fn[rolls]
+             (apply + rolls))))
+
+(defn step [{:keys [previous-roles] :as game-state}]
+  (let [new-rolls (combined-roll (last previous-roles))]
+    (-> (cached-update-board game-state (get-total-roll new-rolls))
+        (assoc :previous-roles new-rolls))))
 
 (defn run-game [game-state]
   (take-while continue? (iterate step game-state)))
@@ -70,26 +77,26 @@
 (defn has-active-games? [games]
   (seq (filter is-active-game? games)))
 
+(defn next-step [previous-states roll]
+  (let [recent-game-state (last previous-states)]
+    (if (not (:has-winner recent-game-state))
+      (conj previous-states (cached-update-board recent-game-state roll))
+      previous-states)))
+
 (defn get-quantum-rolls []
   (let [rolls [1 2 3]]
     (for [a rolls b rolls c rolls]
       [a b c])))
 
-(defn next-step [previous-states rolls]
-  (let [recent-game-state (last previous-states)]
-    (if (not (:has-winner recent-game-state))
-      (conj previous-states (update-board recent-game-state rolls))
-      previous-states)))
+(def totalled-quantum-rolls
+  (mapv (partial apply +) (get-quantum-rolls)))
 
-;(defn historic-step [previous-states rolls]
-;  (next-step previous-states rolls))
-;
-;(defn create-universe [game rolls]
-;  (mapv (partial historic-step game) rolls))
+(comment
+  (group-by #(reduce + %) (get-quantum-rolls))
+  ,)
 
 (defn quantum-step [game]
-  (let [quantum-rolls (get-quantum-rolls)]
-    (mapv (partial next-step game) quantum-rolls)))
+  (mapv (partial next-step game) totalled-quantum-rolls))
 
 (defn quantum-games [games]
   (reduce (fn [games game]
@@ -127,7 +134,7 @@
        quantum-games))
 
 (defn part-2 []
-  (->> (assoc game-state :winning-score 3)
+  (->> (assoc game-state :winning-score 4)
        run-quantum
        count))
        ;get-winners
@@ -137,6 +144,7 @@
   (def initial-game-state (assoc game-state :dice-count 1 :dice-size 3 :winning-score 10))
   (def results (quantum-games (quantum-games [[initial-game-state]])))
 
+  (* 27 27 27)
 
   ,)
 
