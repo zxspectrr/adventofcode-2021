@@ -34,9 +34,8 @@
 
 (def continue? (complement winner?))
 
-(defn step [{:keys [previous-roll board-positions turn dice-count dice-size] :as game-state}]
+(defn update-board [{:keys [board-positions turn] :as game-state} rolls]
   (let [board-pos (get board-positions turn)
-        rolls (combined-roll previous-roll dice-size dice-count)
         total-roll (apply + rolls)
         new-pos (move board-pos total-roll)]
 
@@ -45,6 +44,10 @@
         (assoc :turn (get-next-turn turn))
         (update-in [:scores turn] (partial + new-pos))
         (assoc-in [:board-positions turn] new-pos))))
+
+(defn step [{:keys [previous-roll dice-count dice-size] :as game-state}]
+  (let [rolls (combined-roll previous-roll dice-size dice-count)]
+    (update-board game-state rolls)))
 
 (defn run-game [ game-state]
   (take-while continue? (iterate step game-state)))
