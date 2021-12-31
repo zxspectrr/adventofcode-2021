@@ -18,15 +18,15 @@
 (def starting-positions {1 1 2 2})
 ;(def starting-positions {1 4 2 8})
 
-(def game-state {:current-roll 0
-                 :roll-count 0
-                 :dice-count 3
-                 :dice-size 100
-                 :winning-score 1000
+(def game-state {:previous-roll   0
+                 :roll-count      0
+                 :dice-count      3
+                 :dice-size       100
+                 :winning-score   1000
                  :board-positions starting-positions
-                 :scores {1 0
-                          2 0}
-                 :turn 1})
+                 :scores          {1 0
+                                   2 0}
+                 :turn            1})
 
 (defn winner? [{:keys [winning-score scores]}]
   (or (>= (get scores 1) winning-score)
@@ -34,13 +34,13 @@
 
 (def continue? (complement winner?))
 
-(defn step [{:keys [current-roll board-positions turn dice-count dice-size] :as game-state}]
+(defn step [{:keys [previous-roll board-positions turn dice-count dice-size] :as game-state}]
   (let [board-pos (get board-positions turn)
-        rolls (combined-roll current-roll dice-size dice-count)
+        rolls (combined-roll previous-roll dice-size dice-count)
         total-roll (apply + rolls)
         new-pos (move board-pos total-roll)]
 
-    (-> (assoc game-state :current-roll (last rolls))
+    (-> (assoc game-state :previous-roll (last rolls))
         (update :roll-count (partial + 3))
         (assoc :turn (get-next-turn turn))
         (update-in [:scores turn] (partial + new-pos))
@@ -50,10 +50,15 @@
   (take-while continue? (iterate step game-state)))
 
 (defn part-1 []
-  (let [final-roll (->> (run-game game-state) last step)
+  (let [final-roll (->> game-state run-game last step)
         {:keys [scores roll-count]} final-roll
         losing-score (->> (vals scores) sort first)]
     (* losing-score roll-count)))
+
+;(defn quantum-roll [game-state]
+;  (let [new-rolls (map #(assoc))])
+;  (let []) (->> (update game-state :roll-count inc)))
+
 
 (defn part-2 []
   (->> (assoc game-state :dice-count 1 :dice-size 3 :winning-score 21)
