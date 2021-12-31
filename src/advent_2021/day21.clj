@@ -34,13 +34,13 @@
 
 (def continue? (complement winner?))
 
-(defn update-board [{:keys [board-positions turn] :as game-state} rolls]
+(defn update-board [{:keys [board-positions turn dice-count] :as game-state} rolls]
   (let [board-pos (get board-positions turn)
         total-roll (apply + rolls)
         new-pos (move board-pos total-roll)]
 
     (-> (assoc game-state :previous-roll (last rolls))
-        (update :roll-count (partial + 3))
+        (update :roll-count (partial + dice-count))
         (assoc :turn (get-next-turn turn))
         (update-in [:scores turn] (partial + new-pos))
         (assoc-in [:board-positions turn] new-pos))))
@@ -49,7 +49,7 @@
   (let [rolls (combined-roll previous-roll dice-size dice-count)]
     (update-board game-state rolls)))
 
-(defn run-game [ game-state]
+(defn run-game [game-state]
   (take-while continue? (iterate step game-state)))
 
 (defn part-1 []
@@ -58,16 +58,14 @@
         losing-score (->> (vals scores) sort first)]
     (* losing-score roll-count)))
 
-;(defn quantum-roll [game-state]
-;  (let [new-rolls (map #(assoc))])
-;  (let []) (->> (update game-state :roll-count inc)))
-
+(defn run-quantum [game-state]
+  (let [new-states (map #(update-board game-state [%]) [1 2 3])]
+    new-states))
 
 (defn part-2 []
   (->> (assoc game-state :dice-count 1 :dice-size 3 :winning-score 21)
-       run-game
-       last
-       step))
+       run-quantum))
+
 
 (comment
  ,)
