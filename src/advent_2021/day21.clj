@@ -10,8 +10,8 @@
                  :board-positions starting-positions
                  :scores          {1 0
                                    2 0}
-                 :turn            1
-                 :has-winner      false})
+                 :last-score      0
+                 :turn            1})
 
 (defn get-next-turn [player-number]
   (if (= 1 player-number) 2 1))
@@ -19,6 +19,8 @@
 (defn move [position moves]
   (let [score (dec (+ position moves))]
     (nth (cycle (range 1 11)) score)))
+
+(def cached-move (memoize move))
 
 (defn incrementing-roll [previous-value]
   (if (>= previous-value 100) 1 (inc previous-value)))
@@ -29,25 +31,21 @@
          (rest)
          (into [])))
 
-(defn game-has-winner? [{:keys [winning-score scores]}]
-  (or (>= (get scores 1) winning-score)
-      (>= (get scores 2) winning-score)))
+(defn game-has-winner? [winning-score last-score]
+  (>= last-score winning-score))
 
-(def continue? (complement game-has-winner?))
-
-(defn update-winner-state [game-state]
-  (assoc game-state :has-winner (game-has-winner? game-state)))
+(defn continue? [{:keys [winning-score last-score]}]
+  (not (game-has-winner? winning-score last-score)))
 
 (defn update-board [{:keys [board-positions turn] :as game-state} total-roll]
   (let [board-pos (get board-positions turn)
-        new-pos (move board-pos total-roll)]
+        new-pos (cached-move board-pos total-roll)]
 
     (-> (assoc game-state :roll total-roll)
         (update :roll-count (partial + 3))
         (assoc :turn (get-next-turn turn))
         (update-in [:scores turn] (partial + new-pos))
-        (assoc-in [:board-positions turn] new-pos)
-        (update-winner-state))))
+        (assoc-in [:board-positions turn] new-pos))))
 
 (def cached-update-board (memoize update-board))
 
@@ -69,77 +67,60 @@
         losing-score (->> (vals scores) sort first)]
     (* losing-score roll-count)))
 
-(defn has-winner? [game]
-  (game-has-winner? (last game)))
+(defn has-winner? [{:keys [winning-score last-score]}]
+  (game-has-winner? winning-score last-score))
 
 (def is-active-game? (complement has-winner?))
 
 (defn has-active-games? [games]
   (seq (filter is-active-game? games)))
 
-(defn next-step [previous-states roll]
-  (let [recent-game-state (last previous-states)]
-    (if (not (:has-winner recent-game-state))
-      (conj previous-states (cached-update-board recent-game-state roll))
-      previous-states)))
+(defn next-step [game roll win-count]
+  (let [{:keys [turn last-score winning-score]} game
+        total-score (+ last-score roll)]
+    (if (< total-score winning-score)
+      [(cached-update-board game roll) win-count]
+      [game (update win-count turn inc)])))
 
 (defn get-quantum-rolls []
   (let [rolls [1 2 3]]
     (for [a rolls b rolls c rolls]
       [a b c])))
-
 (def totalled-quantum-rolls
   (mapv (partial apply +) (get-quantum-rolls)))
-
 (comment
   (group-by #(reduce + %) (get-quantum-rolls))
   ,)
 
-(defn quantum-step [game]
-  (mapv (partial next-step game) totalled-quantum-rolls))
+(defn quantum-step [game win-count]
+  (mapv (partial next-step game win-count) totalled-quantum-rolls))
 
-(defn quantum-games [games]
+(defn quantum-games [[games win-count]]
   (reduce (fn [games game]
-            (let [games-for-game (quantum-step game)]
-              (into games games-for-game)))
+            (into games (quantum-step game win-count)))
           []
           games))
 
-(def initial-game-state (assoc game-state :winning-score 10))
-
-(def games [[initial-game-state]])
-(def game (first games))
-(def quantum-rolls (get-quantum-rolls))
-
-(defn get-winning-player [scores]
-  (->> (reduce (fn [acc [k v]]
-                 (if acc
-                   (let [[ak av] acc]
-                     (if (> v av) [k v] [ak av]))
-                   [k v]))
-               nil
-               scores)
-       first))
-
-(defn get-winner [game]
-  (->> (filter :has-winner game)
-       first
-       :scores
-       get-winning-player))
-
-(defn run-quantum [initial-game-state]
-  (->> (iterate quantum-games [[initial-game-state]])
+(defn run-quantum [initial-game-state win-count]
+  (->> (iterate quantum-games [[initial-game-state] win-count])
        (drop-while has-active-games?)
        first))
 
 (defn part-2 []
-  (->> (assoc game-state :winning-score 4)
-       run-quantum
-       count))
+  (-> (assoc game-state :winning-score 1)
+      (run-quantum {1 0 2 0})
+      count))
        ;get-winners
        ;frequencies))
 
 (comment
+
+  (def initial-game-state (assoc game-state :winning-score 1))
+  (def games [initial-game-state])
+  (def game (first games))
+
+  (def win-counts {1 0 2 0})
+
   (def initial-game-state (assoc game-state :dice-count 1 :dice-size 3 :winning-score 10))
   (def results (quantum-games (quantum-games [[initial-game-state]])))
 
