@@ -18,8 +18,8 @@
 (def starting-positions {1 1 2 2})
 ;(def starting-positions {1 4 2 8})
 
-(def game-state {:previous-roll   0
-                 :roll-count      0
+(def game-state {:roll-count      0
+                 :previous-roll   0
                  :dice-count      3
                  :dice-size       100
                  :winning-score   1000
@@ -58,9 +58,24 @@
         losing-score (->> (vals scores) sort first)]
     (* losing-score roll-count)))
 
-(defn run-quantum [game-state]
-  (let [new-states (map #(update-board game-state [%]) [1 2 3])]
-    new-states))
+(defn next-step [previous-states roll]
+  (let [recent-game-state (last previous-states)]
+    (conj previous-states (update-board recent-game-state [roll]))))
+
+(defn historic-step [previous-states roll]
+  (next-step previous-states roll))
+
+(defn quantum-step [previous-states]
+  (mapv (partial historic-step previous-states) [1 2 3]))
+  ;(reduce (fn [acc ps]
+  ;          (let [new-states (mapv #(update-board ps [%]) [1 2 3])]
+  ;            (conj acc new-states)))
+  ;        []
+  ;        previous-states))
+
+(defn run-quantum [initial-game-state]
+  (->> (quantum-step [initial-game-state])))
+       ;(quantum-step)))
 
 (defn part-2 []
   (->> (assoc game-state :dice-count 1 :dice-size 3 :winning-score 21)
