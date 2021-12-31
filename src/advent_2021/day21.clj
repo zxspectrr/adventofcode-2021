@@ -22,14 +22,17 @@
                  :roll-count 0
                  :dice-count 3
                  :dice-size 100
+                 :winning-score 1000
                  :board-positions starting-positions
                  :scores {1 0
                           2 0}
                  :turn 1})
 
-(defn continue? [max-score {:keys [scores]}]
-  (and (< (get scores 1) max-score)
-       (< (get scores 2) max-score)))
+(defn winner? [{:keys [winning-score scores]}]
+  (or (>= (get scores 1) winning-score)
+      (>= (get scores 2) winning-score)))
+
+(def continue? (complement winner?))
 
 (defn step [{:keys [current-roll board-positions turn dice-count dice-size] :as game-state}]
   (let [board-pos (get board-positions turn)
@@ -43,17 +46,20 @@
         (update-in [:scores turn] (partial + new-pos))
         (assoc-in [:board-positions turn] new-pos))))
 
-(defn run-game [max-score]
-  (take-while (partial continue? max-score) (iterate step game-state)))
+(defn run-game [ game-state]
+  (take-while continue? (iterate step game-state)))
 
 (defn part-1 []
-  (let [final-roll (->> (run-game 1000) last step)
+  (let [final-roll (->> (run-game game-state) last step)
         {:keys [scores roll-count]} final-roll
         losing-score (->> (vals scores) sort first)]
     (* losing-score roll-count)))
 
 (defn part-2 []
-  (->> (run-game 21) last step))
+  (->> (assoc game-state :dice-count 1 :dice-size 3 :winning-score 21)
+       run-game
+       last
+       step))
 
 (comment
  ,)
