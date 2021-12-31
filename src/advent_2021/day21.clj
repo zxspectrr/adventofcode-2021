@@ -71,7 +71,7 @@
   (seq (filter is-active-game? games)))
 
 (defn get-quantum-rolls []
-  (let [rolls [1 2]]
+  (let [rolls [1 2 3]]
     (for [a rolls b rolls c rolls]
       [a b c])))
 
@@ -122,20 +122,14 @@
 
 (defn run-quantum [initial-game-state]
   (->> (iterate quantum-games [[initial-game-state]])
-       ;(drop-while has-active-games?)
-       (take 1)
-       last))
-
-       ;quantum-games))
-  ;(->> (quantum-games [[initial-game-state]])
-  ;     quantum-games
-  ;     quantum-games
-  ;     ;quantum-games
-  ;     rolls-for-games))
+       (take-while has-active-games?)
+       last
+       quantum-games))
 
 (defn part-2 []
-  (->> (assoc game-state :dice-count 1 :dice-size 3 :winning-score 5)
-       run-quantum))
+  (->> (assoc game-state :winning-score 3)
+       run-quantum
+       count))
        ;get-winners
        ;frequencies))
 
