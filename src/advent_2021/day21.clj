@@ -62,14 +62,6 @@
         losing-score (->> (vals scores) sort first)]
     (* losing-score roll-count)))
 
-(defn next-step [previous-states roll]
-  (let [recent-game-state (last previous-states)]
-    (if (not (:has-winner recent-game-state))
-      (conj previous-states (update-board recent-game-state [roll]))
-      previous-states)))
-
-
-
 (defn has-winner? [game]
   (game-has-winner? (last game)))
 
@@ -83,15 +75,21 @@
     (for [a rolls b rolls c rolls]
       [a b c])))
 
-(defn historic-step [previous-states roll]
-  (next-step previous-states roll))
+(defn next-step [previous-states rolls]
+  (let [recent-game-state (last previous-states)]
+    (if (not (:has-winner recent-game-state))
+      (conj previous-states (update-board recent-game-state rolls))
+      previous-states)))
 
-(defn create-universe [game rolls]
-  (mapv (partial historic-step game) rolls))
+;(defn historic-step [previous-states rolls]
+;  (next-step previous-states rolls))
+;
+;(defn create-universe [game rolls]
+;  (mapv (partial historic-step game) rolls))
 
 (defn quantum-step [game]
   (let [quantum-rolls (get-quantum-rolls)]
-    (mapv (partial create-universe game) quantum-rolls)))
+    (mapv (partial next-step game) quantum-rolls)))
 
 (defn quantum-games [games]
   (reduce (fn [games game]
@@ -100,9 +98,11 @@
           []
           games))
 
-(def initial-game-state (assoc game-state :winning-score 2))
+(def initial-game-state (assoc game-state :winning-score 10))
 
 (def games [[initial-game-state]])
+(def game (first games))
+(def quantum-rolls (get-quantum-rolls))
 
 (defn get-winning-player [scores]
   (->> (reduce (fn [acc [k v]]
@@ -119,9 +119,6 @@
        first
        :scores
        get-winning-player))
-
-(defn rolls-for-games [games]
-  (map #(map :roll %) games))
 
 (defn run-quantum [initial-game-state]
   (->> (iterate quantum-games [[initial-game-state]])
