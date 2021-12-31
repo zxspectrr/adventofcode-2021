@@ -1,12 +1,12 @@
 (ns advent-2021.day21)
 
-(defn do-roll [previous-value]
-  (if (> previous-value 99 ) 1 (inc previous-value)))
+(defn combined-roll [previous-value dice-size dice-count]
+  (let [roller-fn (fn [previous-value]
+                    (if (>= previous-value dice-size ) 1 (inc previous-value)))]
 
-(defn combined-roll [previous-value]
-  (->> (iterate do-roll previous-value)
-       (take (inc 3))
-       (rest)))
+    (->> (iterate roller-fn previous-value)
+         (take (inc dice-count))
+         (rest))))
 
 (defn move [position moves]
   (let [score (dec (+ position moves))]
@@ -20,6 +20,8 @@
 
 (def game-state {:current-roll 0
                  :roll-count 0
+                 :dice-count 3
+                 :dice-size 100
                  :board-positions starting-positions
                  :scores {1 0
                           2 0}
@@ -29,9 +31,9 @@
   (and (< (get scores 1) max-score)
        (< (get scores 2) max-score)))
 
-(defn step [{:keys [current-roll board-positions turn] :as game-state}]
+(defn step [{:keys [current-roll board-positions turn dice-count dice-size] :as game-state}]
   (let [board-pos (get board-positions turn)
-        rolls (combined-roll current-roll)
+        rolls (combined-roll current-roll dice-size dice-count)
         total-roll (apply + rolls)
         new-pos (move board-pos total-roll)]
 
@@ -49,6 +51,9 @@
         {:keys [scores roll-count]} final-roll
         losing-score (->> (vals scores) sort first)]
     (* losing-score roll-count)))
+
+(defn part-2 []
+  (->> (run-game 21) last step))
 
 (comment
  ,)
