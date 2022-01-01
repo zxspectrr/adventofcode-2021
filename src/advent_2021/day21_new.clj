@@ -37,33 +37,43 @@
 (def cached-find-winner find-winner)
 
 (defn get-quantum-rolls []
-  (let [rolls [1 2]]
+  (let [rolls [1 2 3]]
     (for [a rolls b rolls c rolls]
       [a b c])))
 (def totalled-quantum-rolls
   (mapv (partial apply +) (get-quantum-rolls)))
 
 (defn quantum-roll [rolls]
-  (->> (map (partial conj rolls) totalled-quantum-rolls)
-       (map score)))
+  (->> (map (partial conj rolls) totalled-quantum-rolls)))
+       ;(map score)))
 
 (defn quantum-step [games]
-  (reduce (fn [acc {:keys [rolls]}]
-            (into acc (quantum-roll rolls)))
-          [games]
-          games))
+  (->> (reduce (fn [acc rolls]
+                 (into acc (quantum-roll rolls)))
+               []
+               games)
+       frequencies
+       keys))
 
 (defn run-quantum []
-  (->> (iterate quantum-step initial-state)
-       (drop 1)
-       (first)))
+  (->> (iterate quantum-step [[]])
+       (drop 8)
+       (first)
+       (group-by #(cached-find-winner % 21))
+       (reduce (fn [acc [k v]] (assoc acc k (count v))) {})))
+       ;(remove #(cached-find-winner % 21))
+       ;count))
+       ;keys
+       ;(group-by #(cached-find-winner % 21))))
        ;count))
 
 (comment
+  (quantum-step [[]])
   (* 27 27 27)
-  (def games [initial-state])
+  (def rolls [])
+  (def games [[]])
   (quantum-step [1 1 1 1])
-  (cached-find-winner [1 1 1 1 1 1 1 1])
+  (cached-find-winner [9 9 9 9 9 9] 21)
 
   (first (drop 100 (iterate cached-find-winner [1 1 1 1 1 1 1 1])))
   (time (first (drop 444356092776315 (repeat (cached-find-winner [1 1 1 1 1 1 1])))))
