@@ -32,9 +32,14 @@
     (when (>= previous-score winning-score)
       previous-player)))
 
-(find-winner [1 1 1] 10)
-
-(score [1 1 1])
+(def cached-find-winner find-winner)
 
 (comment
-  (step initial-state 1))
+  (cached-find-winner [1 1 1 1 1 1 1 1])
+
+  (first (drop 100 (iterate cached-find-winner [1 1 1 1 1 1 1 1])))
+  (time (first (drop 444356092776315 (repeat (cached-find-winner [1 1 1 1 1 1 1])))))
+
+  (step initial-state 1),)
+
+
