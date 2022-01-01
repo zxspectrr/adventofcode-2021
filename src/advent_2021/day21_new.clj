@@ -41,7 +41,7 @@
     (for [a rolls b rolls c rolls]
       [a b c])))
 (def totalled-quantum-rolls
-  (mapv (partial apply +) (get-quantum-rolls)))
+  (into [] (set (mapv (partial apply +) (get-quantum-rolls)))))
 
 (defn quantum-roll [rolls]
   (->> (map (partial conj rolls) totalled-quantum-rolls)))
@@ -53,14 +53,19 @@
                []
                games)
        frequencies
-       keys))
+       keys
+       (group-by #(cached-find-winner % 21))
+       (#(do (prn %) %))
+       (#(get % nil))))
+
 
 (defn run-quantum []
   (->> (iterate quantum-step [[]])
-       (drop 8)
-       (first)
-       (group-by #(cached-find-winner % 21))
-       (reduce (fn [acc [k v]] (assoc acc k (count v))) {})))
+       (drop 2)
+       (first)))
+       ;count))
+       ;(group-by #(cached-find-winner % 21))
+       ;(reduce (fn [acc [k v]] (assoc acc k (count v))) {}))
        ;(remove #(cached-find-winner % 21))
        ;count))
        ;keys
