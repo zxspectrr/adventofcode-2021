@@ -13,6 +13,7 @@
 
 (def initial-state {:board-positions starting-pos
                     :scores          {1 0 2 0}
+                    :rolls           []
                     :turn            1})
 
 (defn step [{:keys [turn board-positions] :as state} roll]
@@ -20,6 +21,7 @@
         new-pos (cached-move pos roll)]
     (-> (update state :turn next-turn)
         (assoc-in [:board-positions turn] new-pos)
+        (update :rolls #(conj % roll))
         (update-in [:scores turn] (partial + new-pos)))))
 
 (defn score [rolls]
@@ -34,7 +36,33 @@
 
 (def cached-find-winner find-winner)
 
+(defn get-quantum-rolls []
+  (let [rolls [1 2]]
+    (for [a rolls b rolls c rolls]
+      [a b c])))
+(def totalled-quantum-rolls
+  (mapv (partial apply +) (get-quantum-rolls)))
+
+(defn quantum-roll [rolls]
+  (->> (map (partial conj rolls) totalled-quantum-rolls)
+       (map score)))
+
+(defn quantum-step [games]
+  (reduce (fn [acc {:keys [rolls]}]
+            (into acc (quantum-roll rolls)))
+          [games]
+          games))
+
+(defn run-quantum []
+  (->> (iterate quantum-step initial-state)
+       (drop 1)
+       (first)))
+       ;count))
+
 (comment
+  (* 27 27 27)
+  (def games [initial-state])
+  (quantum-step [1 1 1 1])
   (cached-find-winner [1 1 1 1 1 1 1 1])
 
   (first (drop 100 (iterate cached-find-winner [1 1 1 1 1 1 1 1])))
