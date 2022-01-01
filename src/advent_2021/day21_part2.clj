@@ -25,10 +25,8 @@
 
 (defn step-game [game-state existing-weight]
   (reduce (fn [state-map [r weight]]
-            (let [combined-weight (* existing-weight weight)
-                  updated-state (update-game-state game-state r)]
-              (merge-with + state-map
-                            { updated-state combined-weight })))
+            (merge-with + state-map
+                        { (update-game-state game-state r) (* existing-weight weight)}))
           {}
           quantum-frequencies))
 
@@ -58,9 +56,3 @@
        :win-count
        (sort)
        last))
-
-
-
-
-
-
