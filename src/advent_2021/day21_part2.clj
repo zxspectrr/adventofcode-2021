@@ -6,9 +6,9 @@
   (let [score (dec (+ position roll))]
     (nth (cycle (range 1 11)) score)))
 
-(defn find-winner [{:keys [scores]}]
-  (cond (>= (get scores 0) 21) 0
-        (>= (get scores 1) 21) 1
+(defn find-winner [{:keys [scores]} winning-score]
+  (cond (>= (get scores 0) winning-score) 0
+        (>= (get scores 1) winning-score) 1
         :else nil))
 
 (defn update-game-state [{:keys [turn positions] :as state} roll]
@@ -32,7 +32,7 @@
 
 (defn step-world [{:keys [games] :as world}]
   (reduce (fn [games-state [game-state count]]
-            (let [updated-state (group-by (fn [[k _]] (find-winner k))
+            (let [updated-state (group-by (fn [[k _]] (find-winner k 21))
                                           (step-game game-state count))
                   {p1 0 p2 1 remain nil} updated-state]
               (-> games-state
@@ -54,5 +54,5 @@
        (drop-while #(seq (:games %)))
        first
        :win-count
-       (sort)
+       sort
        last))
