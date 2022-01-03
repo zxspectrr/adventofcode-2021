@@ -1,6 +1,7 @@
 (ns advent-2021.day22
   (:require [advent-2021.utils :as u]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [clojure.set :as set]))
 
 (def lines (u/read-lines "resources/day22/smaller.txt"))
 
@@ -20,10 +21,21 @@
 
 (def input (mapv parse-coord lines))
 
+(defn step [[value [xs ys zs]]]
+  (letfn [(get-range [[min max]] (range min (inc max)))]
+    (->> (for [x (get-range xs)
+               y (get-range ys)
+               z (get-range zs)]
+           [[x y z] value])
+         (into {}))))
+
+(defn do-step [cuboid step-vals]
+  (merge cuboid (step step-vals)))
+
+(defn process [steps]
+  (reduce do-step {} steps))
 
 (comment
-  (parse-coord "on x=10..12,y=10..12,z=10..12")
-  ,)
-
-(str/split "a..b" #"\.\.")
-(re-find #"\d+" "x=10")
+  (->> (process input)
+       (filter (fn [[coord v]] (= v 1)))
+       count))
