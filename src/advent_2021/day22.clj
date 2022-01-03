@@ -13,7 +13,7 @@
 
     (let [on-off (->> (str/split line #" ")
                       first
-                      (#(if (= "on" %) 1 0)))
+                      (#(if (= "on" %) true false)))
           coords (->> (str/split line #" ")
                       second
                       (#(str/split % #","))
@@ -31,18 +31,15 @@
        (filter (fn [[_ coords]]
                  (valid-ranges coords)))))
 
-(defn step [[xs ys zs]]
-  (letfn [(build-range [[min max]]
-            (range min (inc max)))]
+(defn step [[[x1 x2] [y1 y2] [z1 z2]]]
+    (->> (for [x (range x1 (inc x2))
+               y (range y1 (inc y2))
+               z (range z1 (inc z2))]
+           [x y z])))
 
-    (->> (for [x (build-range xs)
-               y (build-range ys)
-               z (build-range zs)]
-           [x y z]))))
-
-(defn do-step [cuboid [on-off step-coord-vals]]
+(defn do-step [cuboid [on step-coord-vals]]
   (let [step-coords (step step-coord-vals)]
-    (if (= 1 on-off)
+    (if on
       (into cuboid step-coords)
       (set/difference cuboid step-coords))))
 
