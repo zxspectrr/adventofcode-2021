@@ -3,7 +3,7 @@
             [clojure.string :as str]
             [clojure.set :as set]))
 
-(def lines (u/read-lines "resources/day22/smaller.txt"))
+(def lines (u/read-lines "resources/day22/small.txt"))
 
 (defn parse-coord [line]
   (letfn [(get-coord-range [coord-str]
@@ -19,7 +19,14 @@
                       (mapv get-coord-range))]
       [on-off coords])))
 
-(def input (mapv parse-coord lines))
+(defn valid-coords [[xs ys zs]]
+  (letfn [(correct-size? [v] (and (>= v -50) (<= v 50)))
+          (in-range? [[min max]] (and (correct-size? min) (correct-size? max)))]
+    (and (in-range? xs) (in-range? ys) (in-range? zs))))
+
+(defn get-input [lines]
+  (->> (mapv parse-coord lines)
+       (filter (fn [[v coords]] (valid-coords coords)))))
 
 (defn step [[value [xs ys zs]]]
   (letfn [(get-range [[min max]] (range min (inc max)))]
@@ -36,6 +43,7 @@
   (reduce do-step {} steps))
 
 (comment
-  (->> (process input)
-       (filter (fn [[coord v]] (= v 1)))
+  (->> (get-input lines)
+       process
+       (filter (fn [[_ v]] (= v 1)))
        count))
