@@ -51,9 +51,9 @@
        count))
 
 (defn clean-value [v]
-  (case v (<= -50) -50
-          (>= 50) 50
-          v))
+  (cond (<= v -50) -50
+        (>= v 50) 50
+        :else v))
 
 (defn squash-coords-fn [reduce-fn group-fn coords]
   (->> (map (fn [a] (map group-fn a)) coords)
@@ -66,26 +66,31 @@
 (defn squash-min-max [coords]
   (mapv vector (min-xyz coords) (max-xyz coords)))
 
+(defn clean-coord-ranges [ranges]
+  (map (fn [[a b]] (tap> a) [(clean-value a) (clean-value b)]) ranges))
+
 (defn squash-coord-ranges [coords]
   (let [on-off (ffirst coords)]
     [on-off (->> (mapv second coords)
-                 squash-min-max)]))
+                 squash-min-max
+                 clean-coord-ranges)]))
+
 
 (comment
 
-  (def coords [[[51735 63155] [-28647 7980] [44811 64656]]
-               [[-59355 -39775] [22154 55986] [45934 68592]]
-               [[42785 65066] [20097 30749] [42691 67585]]])
-
-  (def coords [[0 [[51735 63155] [-28647 7980] [44811 64656]]]
-               [0 [[-59355 -39775] [22154 55986] [45934 68592]]]
-               [0 [[42785 65066] [20097 30749] [42691 67585]]]])
-
-  (map first [[-8 11] [-4 15] [-6 5]])
+  (squash-coord-ranges coords)
 
   (map squash-coord-ranges (partition-by first (get-input lines)))
 
+  (def flat-coords [[[2253 11637] [73284 83993] [12224 22275]]
+                    [[18360 27676] [11300 36836] [-92072 -72331]]
+                    [[37724 70027] [-59694 -27177] [-56310 -28993]]])
 
+
+
+  (def coords [[0 [[2253 11637] [73284 83993] [12224 22275]]]
+               [0 [[18360 27676] [11300 36836] [-92072 -72331]]]
+               [0 [[37724 70027] [-59694 -27177] [-56310 -28993]]]])
 
   (step [[59948 77225] [-23808 -9387] [7715 32589]])
 
