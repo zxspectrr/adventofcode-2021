@@ -22,88 +22,48 @@
 
 (defn get-input [lines] (mapv parse-coord lines))
 
-(defn sub-range [[min max]]
-  (let [valid-range (range -50 51)]
-    (->> (set (range min (inc max)))
-         (set/intersection (set valid-range))
-         vec
-         sort)))
-
 (defn step [[xs ys zs]]
-  (->> (for [x (sub-range xs)
-             y (sub-range ys)
-             z (sub-range zs)]
-         [x y z])))
+  (letfn [(build-range [[min max]]
+            (range min (inc max)))]
 
-(defn do-step [cuboid [on-off step-coovals]]
-  (let [step-coords (step step-coovals)]
-    (into cuboid step-coords)))
-    ;(if (= 1 on-off)
-    ;  (into cuboid step-coords)
-    ;  (set/difference cuboid step-coords))))
+    (->> (for [x (build-range xs)
+               y (build-range ys)
+               z (build-range zs)]
+           [x y z]))))
+
+(defn do-step [cuboid [on-off step-coord-vals]]
+  (let [step-coords (step step-coord-vals)]
+    (if (= 1 on-off)
+      (into cuboid step-coords)
+      (set/difference cuboid step-coords))))
 
 (defn process [steps]
   (reduce do-step #{} steps))
 
+(defn clean-ranges [ranges]
+  (map (fn [[min max]]
+         [(cond (< min -50) -50
+                (> min 50) nil
+                :else min)
+          (cond (> max 50) 50
+                (< max -50) nil
+                :else max)]) ranges))
+
+(defn de-dupe [coll]
+  (reduce (fn [acc x]
+            (if (not= (last acc) x) (conj acc x) acc))
+          []
+          coll))
+
+(defn sanitise-and-dedupe-input [input]
+  (->> (map (fn [[on-off ranges]]
+              [on-off (clean-ranges ranges)]) input)
+       (map de-dupe)
+       (filter (fn [[_on-off range-coords]]
+                 (->> (flatten range-coords) (filter nil?) empty?)))))
+
 (defn part1 []
   (->> (get-input lines)
+       sanitise-and-dedupe-input
        process
        count))
-
-(defn clean-value [v]
-  (cond (<= v -50) -50
-        (>= v 50) 50
-        :else v))
-
-(defn squash-coords-fn [reduce-fn group-fn coords]
-  (->> (map (fn [a] (map group-fn a)) coords)
-       (u/pivot)
-       (map #(reduce reduce-fn %))))
-
-(defn min-xyz [coords] (squash-coords-fn min first coords))
-(defn max-xyz [coords] (squash-coords-fn max second coords))
-
-(defn squash-min-max [coords]
-  (mapv vector (min-xyz coords) (max-xyz coords)))
-
-(defn clean-coord-ranges [ranges]
-  (map (fn [[a b]] (tap> a) [(clean-value a) (clean-value b)]) ranges))
-
-(defn squash-coord-ranges [coords]
-  (let [on-off (ffirst coords)]
-    [on-off (->> (mapv second coords)
-                 squash-min-max
-                 clean-coord-ranges)]))
-
-
-(comment
-
-  (squash-coord-ranges coords)
-
-  (map squash-coord-ranges (partition-by first (get-input lines)))
-
-  (def flat-coords [[[2253 11637] [73284 83993] [12224 22275]]
-                    [[18360 27676] [11300 36836] [-92072 -72331]]
-                    [[37724 70027] [-59694 -27177] [-56310 -28993]]])
-
-
-
-  (def coords [[0 [[2253 11637] [73284 83993] [12224 22275]]]
-               [0 [[18360 27676] [11300 36836] [-92072 -72331]]]
-               [0 [[37724 70027] [-59694 -27177] [-56310 -28993]]]])
-
-  (step [[59948 77225] [-23808 -9387] [7715 32589]])
-
-  (reduce (fn [c [on-off step-vals]]
-            (tap> [on-off step-vals])
-            c)
-          #{}
-          (get-input lines))
-
-  (process [[1 [[59948 77225] [-23808 -9387] [7715 32589]]]])
-
-  (get-input [[1 [[59948 77225] [-23808 -9387] [7715 32589]]]])
-
-
-
-  ,)
