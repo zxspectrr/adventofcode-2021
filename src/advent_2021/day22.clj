@@ -20,7 +20,16 @@
                       (mapv get-coord-range))]
       [on-off coords])))
 
-(defn get-input [lines] (mapv parse-coord lines))
+(defn invalid-range? [[min max]]
+  (or (> min 50) (< max -50)))
+
+(defn valid-ranges [ranges]
+  (empty? (filter invalid-range? ranges)))
+
+(defn get-input [lines]
+  (->> (mapv parse-coord lines)
+       (filter (fn [[_ coords]]
+                 (valid-ranges coords)))))
 
 (defn step [[xs ys zs]]
   (letfn [(build-range [[min max]]
@@ -40,30 +49,7 @@
 (defn process [steps]
   (reduce do-step #{} steps))
 
-(defn clean-ranges [ranges]
-  (map (fn [[min max]]
-         [(cond (< min -50) -50
-                (> min 50) nil
-                :else min)
-          (cond (> max 50) 50
-                (< max -50) nil
-                :else max)]) ranges))
-
-(defn de-dupe [coll]
-  (reduce (fn [acc x]
-            (if (not= (last acc) x) (conj acc x) acc))
-          []
-          coll))
-
-(defn sanitise-and-dedupe-input [input]
-  (->> (map (fn [[on-off ranges]]
-              [on-off (clean-ranges ranges)]) input)
-       (map de-dupe)
-       (filter (fn [[_on-off range-coords]]
-                 (->> (flatten range-coords) (filter nil?) empty?)))))
-
 (defn part1 []
   (->> (get-input lines)
-       sanitise-and-dedupe-input
        process
        count))
