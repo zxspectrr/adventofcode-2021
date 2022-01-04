@@ -10,9 +10,9 @@
                                 #"(on|off) x=([0-9-]+)..([0-9-]+),y=([0-9-]+)..([0-9-]+),z=([0-9-]+)..([0-9-]+)"
                                 line)
         [x1 x2 y1 y2 z1 z2] (map u/parse-long coordstr)]
-    [(if (= on-off "on") true false) [[x1 (inc x2)]
-                                      [y1 (inc y2)]
-                                      [z1 (inc z2)]]]))
+    [(if (= on-off "on") true false) {:min-x x1 :max-x (inc x2)
+                                      :min-y y1 :max-y (inc y2)
+                                      :min-z z1 :max-z (inc z2)}]))
 
 (defn get-input [lines]
   (mapv parse-line lines))
@@ -22,32 +22,28 @@
        (#(map vector % (rest %)))))
 
 (defn inside? [target candidate]
-  (let [[[t-min-x t-max-x] [t-min-y t-max-y] [t-min-z t-max-z]] target
-        [[c-min-x c-max-x] [c-min-y c-max-y] [c-min-z c-max-z]] candidate]
-    (and (<= t-min-x c-min-x c-max-x t-max-x)
-         (<= t-min-y c-min-y c-max-y t-max-y)
-         (<= t-min-z c-min-z c-max-z t-max-z))))
+  (and (<= (:min-x target) (:min-x candidate) (:max-x candidate) (:max-x target))
+       (<= (:min-y target) (:min-y candidate) (:max-y candidate) (:max-y target))
+       (<= (:min-z target) (:min-z candidate) (:max-z candidate) (:max-z target))))
 
-(defn subtract [target c]
-  (let [[[t-min-x t-max-x] [t-min-y t-max-y] [t-min-z t-max-z]] target
-        [[c-min-x c-max-x] [c-min-y c-max-y] [c-min-z c-max-z]] c]
-    (if (or (> c-min-x t-max-x)
-            (> c-min-y t-max-y)
-            (> c-min-z t-max-z)
-            (< c-max-x t-min-x)
-            (< c-max-y t-min-y)
-            (< c-max-z t-min-z))
-      [target]
-      (for [[x1 x2] (coord-pairs t-min-x t-max-x c-min-x c-max-x)
-            [y1 y2] (coord-pairs t-min-y t-max-y c-min-y c-max-y)
-            [z1 z2] (coord-pairs t-min-z t-max-z c-min-z c-max-z)
-            :let [cube [[x1 x2] [y1 y2] [z1 z2]]]
-            :when (inside? target cube)
-            :when (not (inside? c cube))
-            :when (and (not= x1 x2) (not= y1 y2) (not= z1 z2))]
-        cube))))
+(defn subtract [target candidate]
+  (if (or (> (:min-x candidate) (:max-x target))
+          (> (:min-y candidate) (:max-y target))
+          (> (:min-z candidate) (:max-z target))
+          (< (:max-x candidate) (:min-x target))
+          (< (:max-y candidate) (:min-y target))
+          (< (:max-z candidate) (:min-z target)))
+    [target]
+    (for [[x1 x2] (coord-pairs (:min-x target) (:max-x target) (:min-x candidate) (:max-x candidate))
+          [y1 y2] (coord-pairs (:min-y target) (:max-y target) (:min-y candidate) (:max-y candidate))
+          [z1 z2] (coord-pairs (:min-z target) (:max-z target) (:min-z candidate) (:max-z candidate))
+          :let [cube {:min-x x1 :max-x x2 :min-y y1 :max-y y2 :min-z z1 :max-z z2}]
+          :when (inside? target cube)
+          :when (not (inside? candidate cube))
+          :when (and (not= x1 x2) (not= y1 y2) (not= z1 z2))]
+      cube)))
 
-(defn volume [[[min-x max-x] [min-y max-y] [min-z max-z]]]
+(defn volume [{:keys [min-x max-x min-y max-y min-z max-z]}]
   (* (- max-x min-x)
      (- max-y min-y)
      (- max-z min-z)))
