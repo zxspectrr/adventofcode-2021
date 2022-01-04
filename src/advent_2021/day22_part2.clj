@@ -20,50 +20,30 @@
                       (mapv get-coord-range))]
       [on-off coords])))
 
-(def test-input [[[1 4] [1 4]]
-                 [[2 5] [1 4]]])
-
 (defn coord-pairs [& as]
   (->> (sort as)
        (#(map vector % (rest %)))))
 
 (defn inside? [target candidate]
   (let [[[minx1 maxx1] [miny1 maxy1]] target
-        [[minx2 maxx2] [miny2 maxy2]] candidate
-        rangex1 (set (range minx1 (inc maxx1)))
-        rangey1 (set (range miny1 (inc maxy1)))
-        rangex2 (set (range minx2 (inc maxx2)))
-        rangey2 (set (range miny2 (inc maxy2)))]
-    (and (seq (set/difference rangex1 rangex2))
-         (seq (set/difference rangey1 rangey2)))))
-  ;  (and (< minx1 minx2)
-  ;       (<= minx2 maxx1)
-  ;       (<= miny1 miny2)
-  ;       (<= miny2 maxy1))))
-
-(seq (set/difference #{1 2 3} #{2 3}))
-
-(inside? [[1 3] [1 3]] [[4 4] [4 4]])
-(inside? [[1 5] [1 4]] [[1 4] [1 3]])
+        [[minx2 maxx2] [miny2 maxy2]] candidate]
+    (and (<= minx1 minx2 maxx2 maxx1)
+         (<= miny1 miny2 maxy2 maxy1))))
 
 (defn subtract [target c]
   (let [[[minx1 maxx1] [miny1 maxy1]] target
         [[minx2 maxx2] [miny2 maxy2]] c]
-    (for [[x1 x2] (coord-pairs minx1 maxx1 minx2 maxx2)
-          [y1 y2] (coord-pairs miny1 maxy1 miny2 maxy2)
-          :let [cube [[x1 x2] [y1 y2]]]
-          :when (inside? target cube)
-          :when (not (inside? c cube))]
-      cube)))
-
-
-(subtract [[1 4] [1 4]]
-          [[2 5] [1 4]])
+    (->> (for [[x1 x2] (coord-pairs minx1 maxx1 minx2 maxx2)
+               [y1 y2] (coord-pairs miny1 maxy1 miny2 maxy2)
+               :let [cube [[x1 x2] [y1 y2]]]
+               :when (inside? target cube)
+               :when (not (inside? c cube))]
+           cube)
+         (filter (fn [[[a b] [c d]]] (and (not= a b)
+                                          (not= c d)))))))
 
 (defn get-input [lines]
   (mapv parse-coord lines))
 
 (defn part2 []
-  (->> (get-input lines
-
-         count)))
+  (->> (get-input lines)))
