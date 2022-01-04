@@ -42,8 +42,31 @@
          (filter (fn [[[a b] [c d]]] (and (not= a b)
                                           (not= c d)))))))
 
+(defn volume [[[minx maxx] [miny maxy]]]
+  (* (- maxx minx)
+     (- maxy miny)))
+
+(subtract [[1 4] [1 4]] [[1 4] [2 5]])
+
+(defn subtract-cubes [cubes]
+  (reduce (fn [acc [on-off cube]]
+            (let [result (mapcat (fn [c]
+                                   (subtract c cube)) acc)]
+              (if on-off
+                (conj result cube)
+                result)))
+          []
+          cubes))
+
+(subtract-cubes [[true [[1 4] [1 4]]]
+                 [false [[3 5] [3 6]]]
+                 [true [[1 2] [1 4]]]])
+
 (defn get-input [lines]
   (mapv parse-coord lines))
+
+(count (subtract-cubes (get-input lines)))
+
 
 (defn part2 []
   (->> (get-input lines)))
