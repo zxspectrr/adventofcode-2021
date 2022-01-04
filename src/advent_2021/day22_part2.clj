@@ -10,7 +10,7 @@
                                 #"(on|off) x=([0-9-]+)..([0-9-]+),y=([0-9-]+)..([0-9-]+),z=([0-9-]+)..([0-9-]+)"
                                 line)
         [x1 x2 y1 y2 z1 z2] (map u/parse-long coordstr)]
-    [(if (= on-off "on") true false) [[x1 x2] [y1 y2] [z1 z2]]]))
+    [(if (= on-off "on") true false) [[x1 (inc x2)] [y1 (inc y2)] [z1 (inc z2)]]]))
 
 (defn get-input [lines]
   (mapv parse-line lines))
