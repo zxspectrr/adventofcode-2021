@@ -1,27 +1,19 @@
 (ns advent-2021.day22-part2
-  (:require [advent-2021.utils :as u]
-            [clojure.string :as str]
-            [clojure.set :as set]))
+  (:require [advent-2021.utils :as u]))
 
 (def lines (u/read-lines "resources/day22/input.txt"))
 (def small-lines (u/read-lines "resources/day22/smaller.txt"))
 (def example-lines (u/read-lines "resources/day22/example.txt"))
 
-(defn parse-coord [line]
-  (letfn [(get-coord-range [coord-str]
-            (->> (str/split coord-str #"=")
-                 second
-                 (#(mapv u/parse-long (str/split % #"\.\.")))
-                 ((fn [[a b]] [a (inc b)]))))]
+(defn parse-line [line]
+  (let [[_ on-off & coordstr] (re-matches
+                                #"(on|off) x=([0-9-]+)..([0-9-]+),y=([0-9-]+)..([0-9-]+),z=([0-9-]+)..([0-9-]+)"
+                                line)
+        [x1 x2 y1 y2 z1 z2] (map u/parse-long coordstr)]
+    [(if (= on-off "on") true false) [[x1 x2] [y1 y2] [z1 z2]]]))
 
-    (let [on-off (->> (str/split line #" ")
-                      first
-                      (#(if (= "on" %) true false)))
-          coords (->> (str/split line #" ")
-                      second
-                      (#(str/split % #","))
-                      (mapv get-coord-range))]
-      [on-off coords])))
+(defn get-input [lines]
+  (mapv parse-line lines))
 
 (defn coord-pairs [& as]
   (->> (sort as)
@@ -68,9 +60,6 @@
                 result)))
           []
           cubes))
-
-(defn get-input [lines]
-  (mapv parse-coord lines))
 
 (defn part2 []
   (->> (get-input lines)
