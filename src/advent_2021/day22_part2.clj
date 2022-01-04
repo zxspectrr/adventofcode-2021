@@ -4,12 +4,15 @@
             [clojure.set :as set]))
 
 (def lines (u/read-lines "resources/day22/input.txt"))
+(def small-lines (u/read-lines "resources/day22/smaller.txt"))
+(def example-lines (u/read-lines "resources/day22/example.txt"))
 
 (defn parse-coord [line]
   (letfn [(get-coord-range [coord-str]
             (->> (str/split coord-str #"=")
                  second
-                 (#(mapv u/parse-int (str/split % #"\.\.")))))]
+                 (#(mapv u/parse-long (str/split % #"\.\.")))
+                 ((fn [[a b]] [a (inc b)]))))]
 
     (let [on-off (->> (str/split line #" ")
                       first
@@ -25,28 +28,36 @@
        (#(map vector % (rest %)))))
 
 (defn inside? [target candidate]
-  (let [[[minx1 maxx1] [miny1 maxy1]] target
-        [[minx2 maxx2] [miny2 maxy2]] candidate]
-    (and (<= minx1 minx2 maxx2 maxx1)
-         (<= miny1 miny2 maxy2 maxy1))))
+  (let [[[minx-t maxx-t] [miny-t maxy-t] [minz-t maxz-t]] target
+        [[minx-c maxx-c] [miny-c maxy-c] [minz-c maxz-c]] candidate]
+    (and (<= minx-t minx-c maxx-c maxx-t)
+         (<= miny-t miny-c maxy-c maxy-t)
+         (<= minz-t minz-c maxz-c maxz-t))))
 
 (defn subtract [target c]
-  (let [[[minx1 maxx1] [miny1 maxy1]] target
-        [[minx2 maxx2] [miny2 maxy2]] c]
-    (->> (for [[x1 x2] (coord-pairs minx1 maxx1 minx2 maxx2)
-               [y1 y2] (coord-pairs miny1 maxy1 miny2 maxy2)
-               :let [cube [[x1 x2] [y1 y2]]]
-               :when (inside? target cube)
-               :when (not (inside? c cube))]
-           cube)
-         (filter (fn [[[a b] [c d]]] (and (not= a b)
-                                          (not= c d)))))))
+  (let [[[minx-t maxx-t] [miny-t maxy-t] [minz-t maxz-t]] target
+        [[minx-c maxx-c] [miny-c maxy-c] [minz-c maxz-c]] c]
+    (if (or (> minx-c maxx-t)
+            (> miny-c maxy-t)
+            (> minz-c maxz-t)
+            (< maxx-c minx-t)
+            (< maxy-c miny-t)
+            (< maxz-c minz-t))
+      [target]
+      (->> (for [[x1 x2] (coord-pairs minx-t maxx-t minx-c maxx-c)
+                 [y1 y2] (coord-pairs miny-t maxy-t miny-c maxy-c)
+                 [z1 z2] (coord-pairs minz-t maxz-t minz-c maxz-c)
+                 :let [cube [[x1 x2] [y1 y2] [z1 z2]]]
+                 :when (inside? target cube)
+                 :when (not (inside? c cube))]
+             cube)
+           (filter (fn [[[a b] [c d] [e f]]]
+                     (and (not= a b) (not= c d) (not= e f))))))))
 
-(defn volume [[[minx maxx] [miny maxy]]]
+(defn volume [[[minx maxx] [miny maxy] [minz maxz]]]
   (* (- maxx minx)
-     (- maxy miny)))
-
-(subtract [[1 4] [1 4]] [[1 4] [2 5]])
+     (- maxy miny)
+     (- maxz minz)))
 
 (defn subtract-cubes [cubes]
   (reduce (fn [acc [on-off cube]]
@@ -58,17 +69,11 @@
           []
           cubes))
 
-(->> (subtract-cubes [[true [[1 4] [1 4]]]
-                      [false [[3 5] [3 6]]]
-                      [true [[1 2] [1 4]]]])
-     (map volume)
-     (reduce +))
-
 (defn get-input [lines]
   (mapv parse-coord lines))
 
-(count (subtract-cubes (get-input lines)))
-
-
 (defn part2 []
-  (->> (get-input lines)))
+  (->> (get-input lines)
+       subtract-cubes
+       (map volume)
+       (reduce +)))

@@ -5,6 +5,7 @@
 (defn map-keys [f m] (into {} (map (fn [[k v]] [(f k) v]) m)))
 (defn pivot [dataset] (apply map vector dataset))
 (defn parse-int [str] (Integer/parseInt str))
+(defn parse-long [str] (Long/parseLong str))
 (defn uppercase? [s] (= s (str/upper-case s)))
 (defn read-lines [path]
   (->> (slurp path)
