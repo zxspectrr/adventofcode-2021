@@ -58,9 +58,11 @@
           []
           cubes))
 
-(subtract-cubes [[true [[1 4] [1 4]]]
-                 [false [[3 5] [3 6]]]
-                 [true [[1 2] [1 4]]]])
+(->> (subtract-cubes [[true [[1 4] [1 4]]]
+                      [false [[3 5] [3 6]]]
+                      [true [[1 2] [1 4]]]])
+     (map volume)
+     (reduce +))
 
 (defn get-input [lines]
   (mapv parse-coord lines))
