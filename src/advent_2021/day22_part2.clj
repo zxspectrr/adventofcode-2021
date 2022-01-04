@@ -36,15 +36,14 @@
             (< maxy-c miny-t)
             (< maxz-c minz-t))
       [target]
-      (->> (for [[x1 x2] (coord-pairs minx-t maxx-t minx-c maxx-c)
-                 [y1 y2] (coord-pairs miny-t maxy-t miny-c maxy-c)
-                 [z1 z2] (coord-pairs minz-t maxz-t minz-c maxz-c)
-                 :let [cube [[x1 x2] [y1 y2] [z1 z2]]]
-                 :when (inside? target cube)
-                 :when (not (inside? c cube))]
-             cube)
-           (filter (fn [[[a b] [c d] [e f]]]
-                     (and (not= a b) (not= c d) (not= e f))))))))
+      (for [[x1 x2] (coord-pairs minx-t maxx-t minx-c maxx-c)
+            [y1 y2] (coord-pairs miny-t maxy-t miny-c maxy-c)
+            [z1 z2] (coord-pairs minz-t maxz-t minz-c maxz-c)
+            :let [cube [[x1 x2] [y1 y2] [z1 z2]]]
+            :when (inside? target cube)
+            :when (not (inside? c cube))
+            :when (and (not= x1 x2) (not= y1 y2) (not= z1 z2))]
+        cube))))
 
 (defn volume [[[minx maxx] [miny maxy] [minz maxz]]]
   (* (- maxx minx)
